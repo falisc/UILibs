@@ -104,6 +104,15 @@ function H.Circ(z)
     c.Filled = true; c.ZIndex = z or 0; c.Visible = false
     return c
 end
+-- Returns true if a drawing at Y position py with height ph is at least partially inside [clipTop, clipBottom]
+function H.InClip(py, ph, ct, cb)
+    if not ct or not cb then return true end
+    return (py + ph) > ct and py < cb
+end
+-- Clamps a drawing's visibility to the clip region. Returns true if visible.
+function H.ClipVis(py, ph, ct, cb)
+    return H.InClip(py, ph, ct, cb)
+end
 function H.KeyName(key)
     if not key then return "NONE" end
     local n = {
@@ -367,10 +376,10 @@ function UI:Window(opts)
             local inView = (sy + row.h) > clipTop and sy < clipBottom
             if inView then
                 if row.s2 then
-                    row.s1._upd(cx,          sy, row.hw)
-                    row.s2._upd(cx+row.hw+P, sy, row.hw)
+                    row.s1._upd(cx,          sy, row.hw, clipTop, clipBottom)
+                    row.s2._upd(cx+row.hw+P, sy, row.hw, clipTop, clipBottom)
                 else
-                    row.s1._upd(cx, sy, cw)
+                    row.s1._upd(cx, sy, cw, clipTop, clipBottom)
                 end
             else
                 row.s1._hide()
@@ -588,7 +597,7 @@ function UI:Window(opts)
                 S._h = math.max(th, 50)
             end
 
-            S._upd = function(x, y, w)
+            S._upd = function(x, y, w, ct, cb)
                 local HH = S._title ~= "" and 28 or 0
                 local ip = P
                 local th = HH + ip
@@ -596,19 +605,23 @@ function UI:Window(opts)
                 th = th + ip/2
                 S._h = math.max(th, 50)
 
-                dBs.Position=H.Vec2(x,y); dBs.Size=H.Vec2(w,S._h); dBs.Corner=Theme.Corner; dBs.Visible=true
+                dBs.Position=H.Vec2(x,y); dBs.Size=H.Vec2(w,S._h); dBs.Corner=Theme.Corner
+                dBs.Visible = H.InClip(y, S._h, ct, cb)
 
                 if S._title ~= "" then
-                    dHd.Position=H.Vec2(x,y); dHd.Size=H.Vec2(w,HH); dHd.Corner=Theme.Corner; dHd.Visible=true
-                    dHf.Position=H.Vec2(x,y+HH/2); dHf.Size=H.Vec2(w,HH/2); dHf.Visible=true
-                    dSt.Position=H.Vec2(x+ip, y+HH/2-6); dSt.Visible=true
+                    dHd.Position=H.Vec2(x,y); dHd.Size=H.Vec2(w,HH); dHd.Corner=Theme.Corner
+                    dHd.Visible = H.InClip(y, HH, ct, cb)
+                    dHf.Position=H.Vec2(x,y+HH/2); dHf.Size=H.Vec2(w,HH/2)
+                    dHf.Visible = H.InClip(y+HH/2, HH/2, ct, cb)
+                    dSt.Position=H.Vec2(x+ip, y+HH/2-6)
+                    dSt.Visible = H.InClip(y+HH/2-6, 12, ct, cb)
                 else
                     dHd.Visible=false; dHf.Visible=false; dSt.Visible=false
                 end
 
                 local wy = y + HH + ip
                 for _, wg in ipairs(S._widgets) do
-                    wg._upd(x+ip, wy, w-ip*2)
+                    wg._upd(x+ip, wy, w-ip*2, ct, cb)
                     wy = wy + wg._h + ip/2
                 end
             end
@@ -631,7 +644,7 @@ function UI:Window(opts)
                 wo = wo or {}
                 local wg = { _drawings={}, _h=22, _text=wo.Title or "" }
                 local d = H.Txt(17) ; d.Color=Theme.SubText ; d.Text=wg._text ; wg._drawings.d=d
-                wg._upd = function(x,y,w) d.Position=H.Vec2(x,y+3); d.Visible=true end
+                wg._upd = function(x,y,w,ct,cb) d.Position=H.Vec2(x,y+3); d.Visible=H.InClip(y, wg._h, ct, cb) end
                 wg._click = function() end
                 table.insert(S._widgets, wg)
                 local r={}
@@ -646,10 +659,11 @@ function UI:Window(opts)
                 local dB=H.Sq(17,true,Theme.Corner); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
                 local dA=H.Txt(18); dA.Color=Theme.SubText; dA.Text="»" ; wg._drawings.a=dA
-                wg._upd = function(x,y,w)
-                    dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,26); dB.Visible=true
-                    dT.Position=H.Vec2(x+8,y+5); dT.Visible=true
-                    dA.Position=H.Vec2(x+w-18,y+5); dA.Visible=true
+                wg._upd = function(x,y,w,ct,cb)
+                    local vis = H.InClip(y, wg._h, ct, cb)
+                    dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,26); dB.Visible=vis
+                    dT.Position=H.Vec2(x+8,y+5); dT.Visible=vis
+                    dA.Position=H.Vec2(x+w-18,y+5); dA.Visible=vis
                 end
                 wg._click = function()
                     if dB.Visible and H.InRect(dB.Position,dB.Size) then cb() end
@@ -664,13 +678,14 @@ function UI:Window(opts)
                 local dT=H.Txt(17); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
                 local dTr=H.Sq(17,true,9) ; wg._drawings.tr=dTr
                 local dK=H.Circ(18); dK.Color=Color3.fromRGB(255,255,255); dK.NumSides=30; dK.Radius=7 ; wg._drawings.k=dK
-                wg._upd = function(x,y,w)
-                    dT.Position=H.Vec2(x,y+7); dT.Visible=true
+                wg._upd = function(x,y,w,ct,cb)
+                    local vis = H.InClip(y, wg._h, ct, cb)
+                    dT.Position=H.Vec2(x,y+7); dT.Visible=vis
                     local tw=36; local th=18; local tx=x+w-tw; local ty=y+6
                     dTr.Position=H.Vec2(tx,ty); dTr.Size=H.Vec2(tw,th)
-                    dTr.Color=wg._value and Theme.ToggleOn or Theme.ToggleOff; dTr.Corner=9; dTr.Visible=true
+                    dTr.Color=wg._value and Theme.ToggleOn or Theme.ToggleOff; dTr.Corner=9; dTr.Visible=vis
                     local kx = wg._value and (tx+tw-th+1) or (tx+1)
-                    dK.Position=H.Vec2(kx+th/2-1, ty+th/2); dK.Visible=true
+                    dK.Position=H.Vec2(kx+th/2-1, ty+th/2); dK.Visible=vis
                 end
                 wg._click = function()
                     if dTr.Visible and H.InRect(dTr.Position,dTr.Size) then
@@ -705,15 +720,16 @@ function UI:Window(opts)
                     return tonumber(string.format(fmt, math.clamp(st, wg._min, wg._max)))
                 end
 
-                wg._upd = function(x,y,w)
-                    dTt.Position=H.Vec2(x,y+2); dTt.Visible=true
+                wg._upd = function(x,y,w,ct,cb)
+                    local vis = H.InClip(y, wg._h, ct, cb)
+                    dTt.Position=H.Vec2(x,y+2); dTt.Visible=vis
                     local ty=y+22
                     wg._tp=H.Vec2(x,ty); wg._ts=H.Vec2(w,12)
-                    dTr.Position=H.Vec2(x,ty); dTr.Size=H.Vec2(w,12); dTr.Visible=true
+                    dTr.Position=H.Vec2(x,ty); dTr.Size=H.Vec2(w,12); dTr.Visible=vis
                     local pct=math.clamp((wg._value-wg._min)/(wg._max-wg._min),0,1)
-                    dFl.Position=H.Vec2(x,ty); dFl.Size=H.Vec2(math.max(w*pct,8),12); dFl.Visible=true
+                    dFl.Position=H.Vec2(x,ty); dFl.Size=H.Vec2(math.max(w*pct,8),12); dFl.Visible=vis
                     local vt=tostring(wg._value)..wg._suffix
-                    dVl.Text=vt; dVl.Position=H.Vec2(x+w/2-#vt*3.5,ty); dVl.Visible=true
+                    dVl.Text=vt; dVl.Position=H.Vec2(x+w/2-#vt*3.5,ty); dVl.Visible=vis
                 end
                 wg._click = function()
                     if dTr.Visible and H.InRect(wg._tp,wg._ts) then
@@ -755,14 +771,15 @@ function UI:Window(opts)
                     table.insert(od,{b=ob,t=ot})
                     table.insert(wg._xd,ob); table.insert(wg._xd,ot)
                 end
-                wg._upd = function(x,y,w)
+                wg._upd = function(x,y,w,ct,cb)
                     local ns = #wg._options > MAX_ROWS
                     local visible = math.min(#wg._options, MAX_ROWS)
                     local rowW = ns and (w - SB_W - 2) or w
                     wg._h = wg._open and (32 + visible*26 + 4) or 32
-                    dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=true
-                    dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=true
-                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=true
+                    local vis = H.InClip(y, 28, ct, cb)
+                    dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=vis
+                    dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=vis
+                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=vis
 
                     local listY = y + 30
                     local listH = visible * 26
@@ -772,9 +789,10 @@ function UI:Window(opts)
                         local o=od[i]; local opt=wg._options[i+wg._scroll]
                         if wg._open and opt then
                             local oy = listY + (i-1)*26
+                            local ovis = H.InClip(oy, 25, ct, cb)
                             o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,25)
-                            o.b.Color=(opt==wg._value) and Theme.Accent or Theme.Section; o.b.Visible=true
-                            o.t.Text=opt; o.t.Position=H.Vec2(x+8,oy+5); o.t.Visible=true
+                            o.b.Color=(opt==wg._value) and Theme.Accent or Theme.Section; o.b.Visible=ovis
+                            o.t.Text=opt; o.t.Position=H.Vec2(x+8,oy+5); o.t.Visible=ovis
                         else o.b.Visible=false; o.t.Visible=false end
                     end
 
@@ -782,13 +800,14 @@ function UI:Window(opts)
                         local trackX = x + rowW + 2
                         local trackH = listH
                         wg._trackX=trackX; wg._trackY=listY; wg._trackH=trackH
-                        dSbTrack.Position=H.Vec2(trackX, listY); dSbTrack.Size=H.Vec2(SB_W, trackH); dSbTrack.Visible=true
+                        local sbvis = H.InClip(listY, trackH, ct, cb)
+                        dSbTrack.Position=H.Vec2(trackX, listY); dSbTrack.Size=H.Vec2(SB_W, trackH); dSbTrack.Visible=sbvis
                         -- thumb size proportional to visible/total, position based on scroll
                         local total = #wg._options
                         local thumbH = math.max(16, math.floor(trackH * (MAX_ROWS / total)))
                         local maxScroll = total - MAX_ROWS
                         local thumbY = listY + math.floor((trackH - thumbH) * (wg._scroll / maxScroll))
-                        dSbThumb.Position=H.Vec2(trackX, thumbY); dSbThumb.Size=H.Vec2(SB_W, thumbH); dSbThumb.Visible=true
+                        dSbThumb.Position=H.Vec2(trackX, thumbY); dSbThumb.Size=H.Vec2(SB_W, thumbH); dSbThumb.Visible=sbvis
                     else
                         dSbTrack.Visible=false; dSbThumb.Visible=false
                     end
@@ -851,7 +870,7 @@ function UI:Window(opts)
                     table.insert(od,{b=ob,t=ot,c=oc})
                     table.insert(wg._xd,ob); table.insert(wg._xd,ot); table.insert(wg._xd,oc)
                 end
-                wg._upd = function(x,y,w)
+                wg._upd = function(x,y,w,ct,cb)
                     local ns = #wg._options > MAX_ROWS
                     local visible = math.min(#wg._options, MAX_ROWS)
                     local rowW = ns and (w - SB_W - 2) or w
@@ -859,9 +878,10 @@ function UI:Window(opts)
                     local st=#wg._value>0 and table.concat(wg._value,", ") or "None"
                     local maxChars = math.floor((rowW-60)/7)
                     if #st > maxChars then st = string.sub(st,1,maxChars-2)..".." end
-                    dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=true
-                    dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=true
-                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=true
+                    local vis = H.InClip(y, 28, ct, cb)
+                    dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=vis
+                    dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=vis
+                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=vis
 
                     local listY = y + 30
                     local listH = visible * 26
@@ -872,11 +892,12 @@ function UI:Window(opts)
                         local sel=opt and table.find(wg._value,opt)
                         if wg._open and opt then
                             local oy = listY + (i-1)*26
+                            local ovis = H.InClip(oy, 25, ct, cb)
                             o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,25)
-                            o.b.Color=sel and Theme.Accent or Theme.Section; o.b.Visible=true
-                            o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=true
+                            o.b.Color=sel and Theme.Accent or Theme.Section; o.b.Visible=ovis
+                            o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=ovis
                             o.c.Position=H.Vec2(x+6,oy+5); o.c.Size=H.Vec2(14,14)
-                            o.c.Color=sel and Theme.Accent or Theme.SliderBg; o.c.Corner=3; o.c.Visible=true
+                            o.c.Color=sel and Theme.Accent or Theme.SliderBg; o.c.Corner=3; o.c.Visible=ovis
                         else o.b.Visible=false; o.t.Visible=false; o.c.Visible=false end
                     end
 
@@ -884,12 +905,13 @@ function UI:Window(opts)
                         local trackX = x + rowW + 2
                         local trackH = listH
                         wg._trackX=trackX; wg._trackY=listY; wg._trackH=trackH
-                        dSbTrack.Position=H.Vec2(trackX,listY); dSbTrack.Size=H.Vec2(SB_W,trackH); dSbTrack.Visible=true
+                        local sbvis = H.InClip(listY, trackH, ct, cb)
+                        dSbTrack.Position=H.Vec2(trackX,listY); dSbTrack.Size=H.Vec2(SB_W,trackH); dSbTrack.Visible=sbvis
                         local total = #wg._options
                         local thumbH = math.max(16, math.floor(trackH * (MAX_ROWS / total)))
                         local maxScroll = total - MAX_ROWS
                         local thumbY = listY + math.floor((trackH - thumbH) * (wg._scroll / maxScroll))
-                        dSbThumb.Position=H.Vec2(trackX,thumbY); dSbThumb.Size=H.Vec2(SB_W,thumbH); dSbThumb.Visible=true
+                        dSbThumb.Position=H.Vec2(trackX,thumbY); dSbThumb.Size=H.Vec2(SB_W,thumbH); dSbThumb.Visible=sbvis
                     else
                         dSbTrack.Visible=false; dSbThumb.Visible=false
                     end
@@ -942,12 +964,13 @@ function UI:Window(opts)
                 local dKb=H.Sq(17,true,4); dKb.Color=Theme.TabActive ; wg._drawings.kb=dKb
                 local dKt=H.Txt(18,11); dKt.Color=Theme.Text ; wg._drawings.kt=dKt
                 if wg._key then table.insert(W._tracked, wg._key) end
-                wg._upd = function(x,y,w)
-                    dTt.Position=H.Vec2(x,y+7); dTt.Visible=true
+                wg._upd = function(x,y,w,ct,cb)
+                    local vis = H.InClip(y, wg._h, ct, cb)
+                    dTt.Position=H.Vec2(x,y+7); dTt.Visible=vis
                     local ks=wg._changing and "..." or H.KeyName(wg._key)
                     local kw=math.max(44,#ks*8+12)
-                    dKb.Position=H.Vec2(x+w-kw,y+3); dKb.Size=H.Vec2(kw,22); dKb.Visible=true
-                    dKt.Text=ks; dKt.Position=H.Vec2(x+w-kw+5,y+8); dKt.Visible=true
+                    dKb.Position=H.Vec2(x+w-kw,y+3); dKb.Size=H.Vec2(kw,22); dKb.Visible=vis
+                    dKt.Text=ks; dKt.Position=H.Vec2(x+w-kw+5,y+8); dKt.Visible=vis
                 end
                 wg._click = function()
                     if dKb.Visible and H.InRect(dKb.Position,dKb.Size) then
