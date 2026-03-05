@@ -324,30 +324,32 @@ function UI:Window(opts)
         local cw     = W.Size.X - SB - P*2 - SB_W - 4
         local plrH   = 52
         local availH = W.Size.Y - TH - P*2 - plrH
+        local clipTop    = cy
+        local clipBottom = cy + availH
 
         local T    = W._activeTab
         T._scroll  = T._scroll or 0
         local secs = T._sections
 
-        -- PASS 1: layout everything at scroll=0 just to get real _h values
-        local rowY   = cy
-        local i      = 1
-        local totalH = 0
-        local rowData = {}  -- store {s1, s2 or nil, y, rowH}
+        -- PASS 1: measure only — no drawing, just compute heights and row positions
+        local rowData = {}
+        local rowY    = cy
+        local totalH  = 0
+        local i = 1
         while i <= #secs do
             local s1 = secs[i]
             local s2 = secs[i+1]
             if s1._paired and s2 and s2._paired and s1._pg == s2._pg then
                 local hw = (cw-P)/2
-                s1._upd(cx,        rowY, hw)
-                s2._upd(cx+hw+P,   rowY, hw)
+                s1._measure(hw)
+                s2._measure(hw)
                 local rowH = math.max(s1._h, s2._h)
                 table.insert(rowData, {s1=s1, s2=s2, y=rowY, h=rowH, hw=hw})
                 totalH = totalH + rowH + P
                 rowY   = rowY + rowH + P
                 i = i + 2
             else
-                s1._upd(cx, rowY, cw)
+                s1._measure(cw)
                 table.insert(rowData, {s1=s1, y=rowY, h=s1._h})
                 totalH = totalH + s1._h + P
                 rowY   = rowY + s1._h + P
@@ -359,19 +361,16 @@ function UI:Window(opts)
         local maxScroll = math.max(0, totalH - availH)
         T._scroll = math.clamp(T._scroll, 0, maxScroll)
 
-        -- PASS 2: reposition with scroll offset, hide anything outside window bounds
-        local clipTop    = cy
-        local clipBottom = cy + availH
+        -- PASS 2: draw only sections that are within [clipTop, clipBottom]
         for _, row in ipairs(rowData) do
-            local scrolledY = row.y - T._scroll
-            local inView = (scrolledY + row.h) > clipTop and scrolledY < clipBottom
-
+            local sy = row.y - T._scroll   -- scrolled Y position
+            local inView = (sy + row.h) > clipTop and sy < clipBottom
             if inView then
                 if row.s2 then
-                    row.s1._upd(cx,            scrolledY, row.hw)
-                    row.s2._upd(cx+row.hw+P,   scrolledY, row.hw)
+                    row.s1._upd(cx,          sy, row.hw)
+                    row.s2._upd(cx+row.hw+P, sy, row.hw)
                 else
-                    row.s1._upd(cx, scrolledY, cw)
+                    row.s1._upd(cx, sy, cw)
                 end
             else
                 row.s1._hide()
@@ -389,14 +388,12 @@ function UI:Window(opts)
         -- scrollbar
         if maxScroll > 0 then
             local trackX = W._pos.X + W.Size.X - SB_W - P
-            local trackY = cy
-            local trackH = availH
-            W._csbTrackX = trackX; W._csbTrackY = trackY; W._csbTrackH = trackH
-            dCsbTrack.Position = H.Vec2(trackX, trackY)
-            dCsbTrack.Size     = H.Vec2(SB_W, trackH)
+            W._csbTrackX = trackX; W._csbTrackY = clipTop; W._csbTrackH = availH
+            dCsbTrack.Position = H.Vec2(trackX, clipTop)
+            dCsbTrack.Size     = H.Vec2(SB_W, availH)
             dCsbTrack.Visible  = true
-            local thumbH = math.max(20, math.floor(trackH * (availH / totalH)))
-            local thumbY = trackY + math.floor((trackH - thumbH) * (T._scroll / maxScroll))
+            local thumbH = math.max(20, math.floor(availH * (availH / totalH)))
+            local thumbY = clipTop + math.floor((availH - thumbH) * (T._scroll / maxScroll))
             dCsbThumb.Position = H.Vec2(trackX, thumbY)
             dCsbThumb.Size     = H.Vec2(SB_W, thumbH)
             dCsbThumb.Visible  = true
@@ -581,6 +578,15 @@ function UI:Window(opts)
             local dHd = H.Sq(15)      ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd
             local dHf = H.Sq(15,true,0) ; dHf.Color = Theme.SectionHeader ; S._drawings.hf = dHf
             local dSt = H.Txt(16,12)  ; dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt
+
+            S._measure = function(w)
+                local HH = S._title ~= "" and 28 or 0
+                local ip = P
+                local th = HH + ip
+                for _, wg in ipairs(S._widgets) do th = th + wg._h + ip/2 end
+                th = th + ip/2
+                S._h = math.max(th, 50)
+            end
 
             S._upd = function(x, y, w)
                 local HH = S._title ~= "" and 28 or 0
