@@ -121,7 +121,6 @@ function H.KeyName(key)
     return n[key] or ("0x"..string.format("%X", key))
 end
 
--- All scannable keys for keybind change detection
 local ALL_KEYS = {
     0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,
     0x4E,0x4F,0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A,
@@ -129,7 +128,6 @@ local ALL_KEYS = {
     0xA0,0xA1,0xA2,0xA3,0x1B,0x20,0x0D,
 }
 
--- Input polling state
 local Input = {
     m1 = false, m1Last = false, m1Down = false, m1Up = false,
     keys = {}, keysLast = {}, keysDown = {},
@@ -175,7 +173,6 @@ function UI:Window(opts)
     local vp  = game:GetService("Workspace").CurrentCamera.ViewportSize
     W._pos    = H.Vec2(vp.X/2 - W.Size.X/2, vp.Y/2 - W.Size.Y/2)
 
-    -- Drawings
     local dBg   = H.Sq(10) ; dBg.Color   = Theme.Background  ; W._drawings.bg   = dBg
     local dTop  = H.Sq(11) ; dTop.Color  = Theme.TopBar      ; W._drawings.top  = dTop
     local dTopF = H.Sq(11,true,0) ; dTopF.Color = Theme.TopBar ; W._drawings.topF = dTopF
@@ -191,18 +188,19 @@ function UI:Window(opts)
     local dMinL = H.Ln(14,2)       ; dMinL.Color= Theme.Text        ; W._drawings.minL = dMinL
     local dSep  = H.Ln(12,1)       ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep
 
-    -- Player info panel (bottom of sidebar)
-    local dPlrBg   = H.Sq(12,true,0)  ; dPlrBg.Color   = Theme.TabActive    ; W._drawings.plrBg   = dPlrBg
-    local dPlrIcon = H.Sq(13,true,Theme.Corner) ; dPlrIcon.Color = Theme.Accent ; W._drawings.plrIcon = dPlrIcon
-    local dPlrInitial = H.Txt(14,12)  ; dPlrInitial.Color = Theme.Text       ; W._drawings.plrInitial = dPlrInitial
-    local dPlrName = H.Txt(13,12)     ; dPlrName.Color  = Theme.Text         ; W._drawings.plrName = dPlrName
-    local dPlrDisp = H.Txt(13,10)     ; dPlrDisp.Color  = Theme.SubText      ; W._drawings.plrDisp = dPlrDisp
+    local dPlrBg      = H.Sq(12,true,0)         ; dPlrBg.Color      = Theme.TabActive ; W._drawings.plrBg      = dPlrBg
+    local dPlrIcon    = H.Sq(13,true,Theme.Corner) ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon
+    local dPlrInitial = H.Txt(14,12)             ; dPlrInitial.Color = Theme.Text     ; W._drawings.plrInitial = dPlrInitial
+    local dPlrName    = H.Txt(13,12)             ; dPlrName.Color    = Theme.Text     ; W._drawings.plrName    = dPlrName
+    local dPlrDisp    = H.Txt(13,10)             ; dPlrDisp.Color    = Theme.SubText  ; W._drawings.plrDisp    = dPlrDisp
 
-    local _plrName    = LocalPlayer.Name
-    local _plrDisplay = LocalPlayer.DisplayName
+    local _plrName = LocalPlayer.Name
     dPlrName.Text     = _plrName
     dPlrDisp.Text     = "@".._plrName
     dPlrInitial.Text  = string.upper(string.sub(_plrName, 1, 1))
+
+    local clsR = {pos=H.Vec2(0,0), size=H.Vec2(18,18)}
+    local minR = {pos=H.Vec2(0,0), size=H.Vec2(18,18)}
 
     W._draw = function()
         local pos  = W._pos
@@ -241,7 +239,6 @@ function UI:Window(opts)
 
         dSep.From=pos+H.Vec2(0,TH); dSep.To=pos+H.Vec2(sz.X,TH); dSep.Visible=W._open
 
-        -- Player info at bottom of sidebar
         local plrH = 48
         local plrY = pos.Y + sz.Y - plrH
         dPlrBg.Position = pos + H.Vec2(0, sz.Y - plrH)
@@ -273,13 +270,11 @@ function UI:Window(opts)
 
     W._layout = function()
         if not W._open or not W._activeTab then
-            -- hide everything when closed
             for _, tab in ipairs(W._tabs) do
                 for _, s in ipairs(tab._sections) do s._hide() end
             end
             return
         end
-        -- Always hide all sections first if minimized
         if W._minimized then
             for _, tab in ipairs(W._tabs) do
                 for _, s in ipairs(tab._sections) do s._hide() end
@@ -315,7 +310,6 @@ function UI:Window(opts)
     end
 
     W._input = function()
-        -- Only toggle window if no keybind widget is currently being changed
         local anyChanging = false
         for _, tab in ipairs(W._tabs) do
             for _, s in ipairs(tab._sections) do
@@ -375,18 +369,14 @@ function UI:Window(opts)
     end
 
     spawn(function()
-        wait() -- let tabs/sections register before first frame
         while W._running do
-            wait()
             local ok, err = pcall(function()
                 Input.Poll(W._tracked)
                 W._input()
                 W._draw()
                 W._layout()
             end)
-            if not ok then
-                print("[HollowUI Error]", err)
-            end
+            if not ok then print("[HollowUI Error]", err) end
         end
         for _, d in pairs(W._drawings) do pcall(function() d:Remove() end) end
         for _, tab in ipairs(W._tabs) do
@@ -406,9 +396,6 @@ function UI:Window(opts)
     end
     function W:Unload() self._running = false end
 
-    -- ========================
-    -- TAB
-    -- ========================
     function W:Tab(opts)
         opts = opts or {}
         local T = { _title=opts.Title or "Tab", _window=W, _sections={}, _drawings={}, _pc=0 }
@@ -438,9 +425,6 @@ function UI:Window(opts)
             end
         end
 
-        -- ========================
-        -- SECTION FACTORY
-        -- ========================
         local function mkSec(so)
             so = so or {}
             local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil }
@@ -488,10 +472,6 @@ function UI:Window(opts)
                     if wg._click then wg._click() end
                 end
             end
-
-            -- ========================
-            -- WIDGETS
-            -- ========================
 
             function S:Label(wo)
                 wo = wo or {}
@@ -681,7 +661,6 @@ function UI:Window(opts)
                 wg._upd = function(x,y,w)
                     wg._h = wg._open and (32+wg._maxShow*26+4) or 32
                     local st=#wg._value>0 and table.concat(wg._value,", ") or "None"
-                    -- truncate text so it doesnt overflow button
                     local maxChars = math.floor((w - 60) / 7)
                     if #st > maxChars then st = string.sub(st, 1, maxChars-2) .. ".." end
                     dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=true
