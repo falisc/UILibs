@@ -195,13 +195,16 @@ function UI:Window(opts)
     local dPlrIcon    = H.Sq(13,true,Theme.Corner)  ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon
     local dPlrInitial = H.Txt(14,12)                ; dPlrInitial.Color = Theme.Text   ; W._drawings.plrInitial = dPlrInitial
 
-    -- FIX: Display name as top text, username (@name) as subtext
-    -- In Matcha, LocalPlayer.DisplayName may not exist — we use LocalPlayer.Name as fallback
-    local _dispName = LocalPlayer.DisplayName ~= "" and LocalPlayer.DisplayName or LocalPlayer.Name
-    local _userName = LocalPlayer.Name
+    -- DisplayName: use pcall since Matcha's external model may not expose it
+    local _userName = tostring(LocalPlayer.Name)
+    local _dispName = _userName
+    pcall(function()
+        local dn = tostring(LocalPlayer.DisplayName)
+        if dn and dn ~= "" and dn ~= "nil" then _dispName = dn end
+    end)
 
-    local dPlrName    = H.Txt(13,13)             ; dPlrName.Color    = Theme.Text     ; W._drawings.plrName    = dPlrName
-    local dPlrDisp    = H.Txt(13,10)             ; dPlrDisp.Color    = Theme.SubText  ; W._drawings.plrDisp    = dPlrDisp
+    local dPlrName = H.Txt(13,13) ; dPlrName.Color = Theme.Text    ; W._drawings.plrName = dPlrName
+    local dPlrDisp = H.Txt(13,10) ; dPlrDisp.Color = Theme.SubText ; W._drawings.plrDisp = dPlrDisp
 
     dPlrName.Text    = _dispName
     dPlrDisp.Text    = "@".._userName
@@ -328,6 +331,7 @@ function UI:Window(opts)
     end
 
     W._input = function()
+        -- Check if any keybind widget is mid-capture
         local anyChanging = false
         for _, tab in ipairs(W._tabs) do
             for _, s in ipairs(tab._sections) do
@@ -336,7 +340,21 @@ function UI:Window(opts)
                 end
             end
         end
-        if Input.keysDown[W.Key] and not anyChanging then W._open = not W._open end
+
+        if Input.keysDown[W.Key] then
+            if anyChanging then
+                -- Cancel all changing keybinds so the window key always works
+                for _, tab in ipairs(W._tabs) do
+                    for _, s in ipairs(tab._sections) do
+                        for _, wg in ipairs(s._widgets) do
+                            if wg._changing then wg._changing = false end
+                        end
+                    end
+                end
+            end
+            W._open = not W._open
+        end
+
         if not W._open then return end
 
         if Input.m1Down then
@@ -613,48 +631,62 @@ function UI:Window(opts)
 
             function S:Dropdown(wo, cb)
                 wo=wo or {}; cb=cb or function() end
-                local wg = { _drawings={}, _h=32, _open=false, _scroll=0, _maxShow=4,
+                local MAX_ROWS = 10
+                local wg = { _drawings={}, _h=32, _open=false, _scroll=0,
                     _title=wo.Title or "Dropdown", _options=wo.Options or {}, _xd={} }
                 wg._value = wo.Default or wg._options[1]
                 local dB=H.Sq(17,true,Theme.Corner); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
                 local dA=H.Txt(18); dA.Color=Theme.SubText ; wg._drawings.a=dA
-                local dSu=H.Txt(22,11); dSu.Text="▲"; dSu.Color=Theme.SubText ; wg._drawings.su=dSu
-                local dSd=H.Txt(22,11); dSd.Text="▼"; dSd.Color=Theme.SubText ; wg._drawings.sd=dSd
+                local dSuB=H.Sq(22,true,3); dSuB.Color=Theme.Section ; wg._drawings.suB=dSuB
+                local dSuT=H.Txt(22,10); dSuT.Text="^"; dSuT.Color=Theme.SubText ; wg._drawings.suT=dSuT
+                local dSdB=H.Sq(22,true,3); dSdB.Color=Theme.Section ; wg._drawings.sdB=dSdB
+                local dSdT=H.Txt(22,10); dSdT.Text="v"; dSdT.Color=Theme.SubText ; wg._drawings.sdT=dSdT
                 local od={}
-                for i=1,wg._maxShow do
+                for i=1,MAX_ROWS do
                     local ob=H.Sq(20,true,Theme.Corner); ob.Color=Theme.Section
                     local ot=H.Txt(21); ot.Color=Theme.Text
                     table.insert(od,{b=ob,t=ot})
                     table.insert(wg._xd,ob); table.insert(wg._xd,ot)
                 end
+                local _suR={pos=H.Vec2(0,0),size=H.Vec2(20,20)}
+                local _sdR={pos=H.Vec2(0,0),size=H.Vec2(20,20)}
                 wg._upd = function(x,y,w)
-                    wg._h = wg._open and (32+wg._maxShow*26+4) or 32
+                    local visible = math.min(#wg._options, MAX_ROWS)
+                    local ns = #wg._options > MAX_ROWS
+                    local rowW = ns and (w-24) or w
+                    wg._h = wg._open and (32 + visible*26 + 4) or 32
                     dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=true
                     dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=true
                     dA.Text=wg._open and "▲" or "▼"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=true
-                    local ns=#wg._options>wg._maxShow
-                    for i=1,wg._maxShow do
+                    for i=1,MAX_ROWS do
                         local o=od[i]; local opt=wg._options[i+wg._scroll]
                         if wg._open and opt then
                             local oy=y+28+(i-1)*26+2
-                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(w,24)
+                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,24)
                             o.b.Color=(opt==wg._value) and Theme.Accent or Theme.Section; o.b.Visible=true
                             o.t.Text=opt; o.t.Position=H.Vec2(x+8,oy+5); o.t.Visible=true
                         else o.b.Visible=false; o.t.Visible=false end
                     end
                     if wg._open and ns then
-                        local lh=wg._maxShow*26
-                        dSu.Position=H.Vec2(x+w-16,y+30); dSu.Visible=wg._scroll>0
-                        dSd.Position=H.Vec2(x+w-16,y+28+lh-14); dSd.Visible=wg._scroll<#wg._options-wg._maxShow
-                    else dSu.Visible=false; dSd.Visible=false end
+                        local lh=visible*26; local bx=x+rowW+2
+                        _suR.pos=H.Vec2(bx,y+28); _suR.size=H.Vec2(20,20)
+                        dSuB.Position=H.Vec2(bx,y+28); dSuB.Size=H.Vec2(20,20); dSuB.Visible=wg._scroll>0
+                        dSuT.Position=H.Vec2(bx+5,y+30); dSuT.Visible=wg._scroll>0
+                        _sdR.pos=H.Vec2(bx,y+28+lh-20); _sdR.size=H.Vec2(20,20)
+                        dSdB.Position=H.Vec2(bx,y+28+lh-20); dSdB.Size=H.Vec2(20,20); dSdB.Visible=wg._scroll<#wg._options-MAX_ROWS
+                        dSdT.Position=H.Vec2(bx+5,y+28+lh-18); dSdT.Visible=wg._scroll<#wg._options-MAX_ROWS
+                    else
+                        dSuB.Visible=false; dSuT.Visible=false
+                        dSdB.Visible=false; dSdT.Visible=false
+                    end
                 end
                 wg._click = function()
                     if not dB.Visible then return end
-                    if dSu.Visible and H.InRect(dSu.Position,H.Vec2(14,14)) then wg._scroll=math.max(0,wg._scroll-1); return end
-                    if dSd.Visible and H.InRect(dSd.Position,H.Vec2(14,14)) then wg._scroll=math.min(#wg._options-wg._maxShow,wg._scroll+1); return end
+                    if dSuB.Visible and H.InRect(_suR.pos,_suR.size) then wg._scroll=math.max(0,wg._scroll-1); return end
+                    if dSdB.Visible and H.InRect(_sdR.pos,_sdR.size) then wg._scroll=math.min(#wg._options-MAX_ROWS,wg._scroll+1); return end
                     if wg._open then
-                        for i=1,wg._maxShow do
+                        for i=1,MAX_ROWS do
                             local o=od[i]
                             if o.b.Visible and H.InRect(o.b.Position,o.b.Size) then
                                 local opt=wg._options[i+wg._scroll]
@@ -673,37 +705,44 @@ function UI:Window(opts)
 
             function S:MultiDropdown(wo, cb)
                 wo=wo or {}; cb=cb or function() end
-                local wg = { _drawings={}, _h=32, _open=false, _scroll=0, _maxShow=4,
+                local MAX_ROWS = 10
+                local wg = { _drawings={}, _h=32, _open=false, _scroll=0,
                     _title=wo.Title or "MultiDropdown", _options=wo.Options or {}, _xd={} }
                 wg._value = wo.Default or {}
                 local dB=H.Sq(17,true,Theme.Corner); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
                 local dA=H.Txt(18); dA.Color=Theme.SubText ; wg._drawings.a=dA
-                local dSu=H.Txt(22,11); dSu.Text="▲"; dSu.Color=Theme.SubText ; wg._drawings.su=dSu
-                local dSd=H.Txt(22,11); dSd.Text="▼"; dSd.Color=Theme.SubText ; wg._drawings.sd=dSd
+                local dSuB=H.Sq(22,true,3); dSuB.Color=Theme.Section ; wg._drawings.suB=dSuB
+                local dSuT=H.Txt(22,10); dSuT.Text="^"; dSuT.Color=Theme.SubText ; wg._drawings.suT=dSuT
+                local dSdB=H.Sq(22,true,3); dSdB.Color=Theme.Section ; wg._drawings.sdB=dSdB
+                local dSdT=H.Txt(22,10); dSdT.Text="v"; dSdT.Color=Theme.SubText ; wg._drawings.sdT=dSdT
                 local od={}
-                for i=1,wg._maxShow do
+                for i=1,MAX_ROWS do
                     local ob=H.Sq(20,true,Theme.Corner); ob.Color=Theme.Section
                     local ot=H.Txt(21); ot.Color=Theme.Text
                     local oc=H.Sq(21,true,3)
                     table.insert(od,{b=ob,t=ot,c=oc})
                     table.insert(wg._xd,ob); table.insert(wg._xd,ot); table.insert(wg._xd,oc)
                 end
+                local _suR={pos=H.Vec2(0,0),size=H.Vec2(20,20)}
+                local _sdR={pos=H.Vec2(0,0),size=H.Vec2(20,20)}
                 wg._upd = function(x,y,w)
-                    wg._h = wg._open and (32+wg._maxShow*26+4) or 32
+                    local visible = math.min(#wg._options, MAX_ROWS)
+                    local ns = #wg._options > MAX_ROWS
+                    local rowW = ns and (w-24) or w
+                    wg._h = wg._open and (32 + visible*26 + 4) or 32
                     local st=#wg._value>0 and table.concat(wg._value,", ") or "None"
-                    local maxChars = math.floor((w - 60) / 7)
-                    if #st > maxChars then st = string.sub(st, 1, maxChars-2) .. ".." end
+                    local maxChars = math.floor((w-60)/7)
+                    if #st > maxChars then st = string.sub(st,1,maxChars-2)..".." end
                     dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=true
                     dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=true
                     dA.Text=wg._open and "▲" or "▼"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=true
-                    local ns=#wg._options>wg._maxShow
-                    for i=1,wg._maxShow do
+                    for i=1,MAX_ROWS do
                         local o=od[i]; local opt=wg._options[i+wg._scroll]
                         local sel=opt and table.find(wg._value,opt)
                         if wg._open and opt then
                             local oy=y+28+(i-1)*26+2
-                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(w,24)
+                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,24)
                             o.b.Color=sel and Theme.Accent or Theme.Section; o.b.Visible=true
                             o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=true
                             o.c.Position=H.Vec2(x+6,oy+5); o.c.Size=H.Vec2(14,14)
@@ -711,17 +750,24 @@ function UI:Window(opts)
                         else o.b.Visible=false; o.t.Visible=false; o.c.Visible=false end
                     end
                     if wg._open and ns then
-                        local lh=wg._maxShow*26
-                        dSu.Position=H.Vec2(x+w-16,y+30); dSu.Visible=wg._scroll>0
-                        dSd.Position=H.Vec2(x+w-16,y+28+lh-14); dSd.Visible=wg._scroll<#wg._options-wg._maxShow
-                    else dSu.Visible=false; dSd.Visible=false end
+                        local lh=visible*26; local bx=x+rowW+2
+                        _suR.pos=H.Vec2(bx,y+28); _suR.size=H.Vec2(20,20)
+                        dSuB.Position=H.Vec2(bx,y+28); dSuB.Size=H.Vec2(20,20); dSuB.Visible=wg._scroll>0
+                        dSuT.Position=H.Vec2(bx+5,y+30); dSuT.Visible=wg._scroll>0
+                        _sdR.pos=H.Vec2(bx,y+28+lh-20); _sdR.size=H.Vec2(20,20)
+                        dSdB.Position=H.Vec2(bx,y+28+lh-20); dSdB.Size=H.Vec2(20,20); dSdB.Visible=wg._scroll<#wg._options-MAX_ROWS
+                        dSdT.Position=H.Vec2(bx+5,y+28+lh-18); dSdT.Visible=wg._scroll<#wg._options-MAX_ROWS
+                    else
+                        dSuB.Visible=false; dSuT.Visible=false
+                        dSdB.Visible=false; dSdT.Visible=false
+                    end
                 end
                 wg._click = function()
                     if not dB.Visible then return end
-                    if dSu.Visible and H.InRect(dSu.Position,H.Vec2(14,14)) then wg._scroll=math.max(0,wg._scroll-1); return end
-                    if dSd.Visible and H.InRect(dSd.Position,H.Vec2(14,14)) then wg._scroll=math.min(#wg._options-wg._maxShow,wg._scroll+1); return end
+                    if dSuB.Visible and H.InRect(_suR.pos,_suR.size) then wg._scroll=math.max(0,wg._scroll-1); return end
+                    if dSdB.Visible and H.InRect(_sdR.pos,_sdR.size) then wg._scroll=math.min(#wg._options-MAX_ROWS,wg._scroll+1); return end
                     if wg._open then
-                        for i=1,wg._maxShow do
+                        for i=1,MAX_ROWS do
                             local o=od[i]
                             if o.b.Visible and H.InRect(o.b.Position,o.b.Size) then
                                 local opt=wg._options[i+wg._scroll]
