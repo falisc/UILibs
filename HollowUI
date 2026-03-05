@@ -375,14 +375,18 @@ function UI:Window(opts)
     end
 
     spawn(function()
+        wait() -- let tabs/sections register before first frame
         while W._running do
-            task.wait()
-            pcall(function()
+            wait()
+            local ok, err = pcall(function()
                 Input.Poll(W._tracked)
                 W._input()
                 W._draw()
                 W._layout()
             end)
+            if not ok then
+                print("[HollowUI Error]", err)
+            end
         end
         for _, d in pairs(W._drawings) do pcall(function() d:Remove() end) end
         for _, tab in ipairs(W._tabs) do
