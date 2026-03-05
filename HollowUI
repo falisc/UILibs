@@ -178,7 +178,8 @@ function UI:Window(opts)
     local dBg   = H.Sq(10) ; dBg.Color   = Theme.Background  ; W._drawings.bg   = dBg
     local dTop  = H.Sq(11) ; dTop.Color  = Theme.TopBar      ; W._drawings.top  = dTop
     local dTopF = H.Sq(11,true,0) ; dTopF.Color = Theme.TopBar ; W._drawings.topF = dTopF
-    local dSide = H.Sq(11,true,0) ; dSide.Color = Theme.Sidebar ; W._drawings.side = dSide
+    local dSide = H.Sq(11,true,Theme.Corner) ; dSide.Color = Theme.Sidebar ; W._drawings.side = dSide
+    local dSideTop = H.Sq(11,true,0) ; dSideTop.Color = Theme.Sidebar ; W._drawings.sideTop = dSideTop
     local dSideB= H.Sq(12,true,0) ; dSideB.Color= Theme.Border  ; W._drawings.sideB= dSideB
     local dTtl  = H.Txt(13,Theme.TitleSize) ; dTtl.Color=Theme.Text    ; dTtl.Text=W.Title    ; W._drawings.ttl=dTtl
     local dSub  = H.Txt(13,11)              ; dSub.Color=Theme.SubText ; dSub.Text=W.Subtitle ; W._drawings.sub=dSub
@@ -206,7 +207,8 @@ function UI:Window(opts)
         dTop.Position = pos; dTop.Size = H.Vec2(sz.X, TH); dTop.Corner = Theme.Corner; dTop.Visible = W._open
         dTopF.Position= pos + H.Vec2(0,TH/2); dTopF.Size = H.Vec2(sz.X,TH/2); dTopF.Visible = W._open
 
-        dSide.Position = pos + H.Vec2(0,TH); dSide.Size = H.Vec2(SB, sz.Y-TH); dSide.Visible = vis
+        dSide.Position = pos + H.Vec2(0,TH); dSide.Size = H.Vec2(SB, sz.Y-TH); dSide.Corner = Theme.Corner; dSide.Visible = vis
+        dSideTop.Position = pos + H.Vec2(0,TH); dSideTop.Size = H.Vec2(SB, Theme.Corner*2); dSideTop.Visible = vis
         dSideB.Position= pos + H.Vec2(SB,TH); dSideB.Size= H.Vec2(1,sz.Y-TH); dSideB.Visible= vis
 
         dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = W._open
@@ -236,7 +238,14 @@ function UI:Window(opts)
     end
 
     W._layout = function()
-        if not W._open or W._minimized or not W._activeTab then return end
+        if not W._open or not W._activeTab then return end
+        -- Always hide all sections first if minimized
+        if W._minimized then
+            for _, tab in ipairs(W._tabs) do
+                for _, s in ipairs(tab._sections) do s._hide() end
+            end
+            return
+        end
         local cx = W._pos.X + SB + P
         local cy = W._pos.Y + TH + P
         local cw = W.Size.X - SB - P*2
@@ -266,7 +275,16 @@ function UI:Window(opts)
     end
 
     W._input = function()
-        if Input.keysDown[W.Key] then W._open = not W._open end
+        -- Only toggle window if no keybind widget is currently being changed
+        local anyChanging = false
+        for _, tab in ipairs(W._tabs) do
+            for _, s in ipairs(tab._sections) do
+                for _, wg in ipairs(s._widgets) do
+                    if wg._changing then anyChanging = true end
+                end
+            end
+        end
+        if Input.keysDown[W.Key] and not anyChanging then W._open = not W._open end
         if not W._open then return end
 
         if Input.m1Down then
