@@ -46,9 +46,9 @@
     Window:Unload()        -- destroy UI
 ]]
 
-local Players    = game:GetService("Players")
+local Players     = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Mouse      = LocalPlayer:GetMouse()
+local Mouse       = LocalPlayer:GetMouse()
 
 local Theme = {
     Background    = Color3.fromRGB(18, 18, 20),
@@ -70,7 +70,7 @@ local Theme = {
     Corner        = 6,
     Padding       = 8,
     FontSize      = 14,
-    TitleSize     = 15,
+    TitleSize     = 18,  -- FIX: bumped up title size
 }
 
 local H = {}
@@ -167,7 +167,7 @@ function UI:Window(opts)
     W._tracked    = { W.Key, 0x1B }
 
     local SB = 180
-    local TH = 38
+    local TH = 46   -- FIX: taller topbar to fit bigger title
     local P  = Theme.Padding
 
     local vp  = game:GetService("Workspace").CurrentCamera.ViewportSize
@@ -188,16 +188,24 @@ function UI:Window(opts)
     local dMinL = H.Ln(14,2)       ; dMinL.Color= Theme.Text        ; W._drawings.minL = dMinL
     local dSep  = H.Ln(12,1)       ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep
 
-    local dPlrBg      = H.Sq(12,true,0)         ; dPlrBg.Color      = Theme.TabActive ; W._drawings.plrBg      = dPlrBg
-    local dPlrIcon    = H.Sq(13,true,Theme.Corner) ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon
-    local dPlrInitial = H.Txt(14,12)             ; dPlrInitial.Color = Theme.Text     ; W._drawings.plrInitial = dPlrInitial
-    local dPlrName    = H.Txt(13,12)             ; dPlrName.Color    = Theme.Text     ; W._drawings.plrName    = dPlrName
+    -- FIX: player card — bottom overlay square to round only bottom-left corner
+    -- We draw: a rounded full card bg, then a square on top-right to cancel that corner rounding
+    local dPlrBg      = H.Sq(12,true,Theme.Corner) ; dPlrBg.Color = Theme.TabActive ; W._drawings.plrBg      = dPlrBg
+    local dPlrBgFix   = H.Sq(12,true,0)            ; dPlrBgFix.Color = Theme.TabActive ; W._drawings.plrBgFix   = dPlrBgFix  -- covers top-right corner to make it square
+    local dPlrIcon    = H.Sq(13,true,Theme.Corner)  ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon
+    local dPlrInitial = H.Txt(14,12)                ; dPlrInitial.Color = Theme.Text   ; W._drawings.plrInitial = dPlrInitial
+
+    -- FIX: Display name as top text, username (@name) as subtext
+    -- In Matcha, LocalPlayer.DisplayName may not exist — we use LocalPlayer.Name as fallback
+    local _dispName = LocalPlayer.DisplayName ~= "" and LocalPlayer.DisplayName or LocalPlayer.Name
+    local _userName = LocalPlayer.Name
+
+    local dPlrName    = H.Txt(13,13)             ; dPlrName.Color    = Theme.Text     ; W._drawings.plrName    = dPlrName
     local dPlrDisp    = H.Txt(13,10)             ; dPlrDisp.Color    = Theme.SubText  ; W._drawings.plrDisp    = dPlrDisp
 
-    local _plrName = LocalPlayer.Name
-    dPlrName.Text     = _plrName
-    dPlrDisp.Text     = "@".._plrName
-    dPlrInitial.Text  = string.upper(string.sub(_plrName, 1, 1))
+    dPlrName.Text    = _dispName
+    dPlrDisp.Text    = "@".._userName
+    dPlrInitial.Text = string.upper(string.sub(_dispName, 1, 1))
 
     local clsR = {pos=H.Vec2(0,0), size=H.Vec2(18,18)}
     local minR = {pos=H.Vec2(0,0), size=H.Vec2(18,18)}
@@ -222,7 +230,7 @@ function UI:Window(opts)
 
         dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = W._open
         if W.Subtitle ~= "" then
-            dSub.Position = dTtl.Position + H.Vec2(H.TextSize(W.Title, Theme.TitleSize).X+8, 2)
+            dSub.Position = dTtl.Position + H.Vec2(H.TextSize(W.Title, Theme.TitleSize).X+8, 4)
             dSub.Visible  = W._open
         else dSub.Visible = false end
 
@@ -239,11 +247,18 @@ function UI:Window(opts)
 
         dSep.From=pos+H.Vec2(0,TH); dSep.To=pos+H.Vec2(sz.X,TH); dSep.Visible=W._open
 
-        local plrH = 48
+        -- FIX: Player card with rounded bottom-left only
+        local plrH = 52
         local plrY = pos.Y + sz.Y - plrH
+        -- Full rounded background
         dPlrBg.Position = pos + H.Vec2(0, sz.Y - plrH)
         dPlrBg.Size     = H.Vec2(SB, plrH)
+        dPlrBg.Corner   = Theme.Corner
         dPlrBg.Visible  = vis
+        -- Square overlay covering TOP portion to make top corners square
+        dPlrBgFix.Position = pos + H.Vec2(0, sz.Y - plrH)
+        dPlrBgFix.Size     = H.Vec2(SB, Theme.Corner * 2)
+        dPlrBgFix.Visible  = vis
 
         local iconSize = 30
         local iconX = pos.X + P
@@ -261,6 +276,9 @@ function UI:Window(opts)
         dPlrDisp.Position = H.Vec2(iconX + iconSize + 6, iconY + 18)
         dPlrDisp.Visible  = vis
 
+        -- FIX: Tabs — draw them below topbar inside the sidebar area
+        -- tabs start at TH + P (below topbar separator), each tab is 32px tall
+        -- We need to leave space at the bottom for the player card (plrH + P)
         local tabY = TH + P
         for _, tab in ipairs(W._tabs) do
             tab._draw(tabY, vis)
@@ -376,7 +394,8 @@ function UI:Window(opts)
                 W._draw()
                 W._layout()
             end)
-            if not ok then print("[HollowUI Error]", err) end
+            if not ok then print("[MatchaUI Error]", err) end
+            task.wait(0)
         end
         for _, d in pairs(W._drawings) do pcall(function() d:Remove() end) end
         for _, tab in ipairs(W._tabs) do
@@ -401,24 +420,36 @@ function UI:Window(opts)
         local T = { _title=opts.Title or "Tab", _window=W, _sections={}, _drawings={}, _pc=0 }
         T._rect = { pos=H.Vec2(0,0), size=H.Vec2(0,0) }
 
-        local dB = H.Sq(12) ; dB.Color = Theme.Sidebar    ; T._drawings.b = dB
-        local dT = H.Txt(13) ; dT.Color = Theme.SubText ; dT.Text = T._title ; T._drawings.t = dT
-        local dI = H.Sq(13,true,2) ; dI.Color = Theme.Accent ; T._drawings.i = dI
+        -- FIX: tabs were using H.Sq(12) with no corner meaning they were invisible
+        -- against the sidebar. Use a proper background with corner rounding.
+        local dB = H.Sq(12,true,Theme.Corner) ; dB.Color = Theme.Sidebar ; T._drawings.b = dB
+        local dT = H.Txt(13,Theme.FontSize)   ; dT.Color = Theme.SubText ; dT.Text = T._title ; T._drawings.t = dT
+        local dI = H.Sq(13,true,2)            ; dI.Color = Theme.Accent  ; T._drawings.i = dI
 
         T._draw = function(tabY, vis)
-            local wp = W._pos
-            local ia = W._activeTab == T
-            local bp = wp + H.Vec2(P/2, tabY)
-            local bs = H.Vec2(SB-P, 26)
-            T._rect.pos = bp; T._rect.size = bs
-            dB.Position=bp; dB.Size=bs; dB.Color=ia and Theme.TabActive or Theme.Sidebar; dB.Corner=Theme.Corner; dB.Visible=vis
-            dT.Position=bp+H.Vec2(16,5); dT.Color=ia and Theme.Text or Theme.SubText; dT.Visible=vis
-            dI.Position=bp+H.Vec2(4,7); dI.Size=H.Vec2(3,12); dI.Visible=vis and ia
+            local wp  = W._pos
+            local ia  = W._activeTab == T
+            local bp  = wp + H.Vec2(P/2, tabY)
+            local bs  = H.Vec2(SB - P, 28)   -- FIX: was 26, now 28 to match TH properly
+            T._rect.pos  = bp
+            T._rect.size = bs
+            dB.Position = bp
+            dB.Size     = bs
+            dB.Color    = ia and Theme.TabActive or Theme.Sidebar
+            dB.Corner   = Theme.Corner
+            dB.Visible  = vis
+            dT.Position = bp + H.Vec2(16, (bs.Y - Theme.FontSize) / 2)
+            dT.Color    = ia and Theme.Text or Theme.SubText
+            dT.Visible  = vis
+            dI.Position = bp + H.Vec2(4, (bs.Y - 12) / 2)
+            dI.Size     = H.Vec2(3, 12)
+            dI.Visible  = vis and ia
         end
 
         T._click = function()
             if H.InRect(T._rect.pos, T._rect.size) then
-                W._activeTab = T; return
+                W._activeTab = T
+                return
             end
             if W._activeTab == T then
                 for _, s in ipairs(T._sections) do s._click() end
@@ -429,10 +460,10 @@ function UI:Window(opts)
             so = so or {}
             local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil }
 
-            local dBs = H.Sq(14)   ; dBs.Color = Theme.Section       ; S._drawings.bs = dBs
-            local dHd = H.Sq(15)   ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd
-            local dHf = H.Sq(15,true,0); dHf.Color = Theme.SectionHeader ; S._drawings.hf = dHf
-            local dSt = H.Txt(16,12); dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt
+            local dBs = H.Sq(14)      ; dBs.Color = Theme.Section       ; S._drawings.bs = dBs
+            local dHd = H.Sq(15)      ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd
+            local dHf = H.Sq(15,true,0) ; dHf.Color = Theme.SectionHeader ; S._drawings.hf = dHf
+            local dSt = H.Txt(16,12)  ; dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt
 
             S._upd = function(x, y, w)
                 local HH = S._title ~= "" and 28 or 0
@@ -489,7 +520,7 @@ function UI:Window(opts)
             function S:Button(wo, cb)
                 wo=wo or {}; cb=cb or function() end
                 local wg = { _drawings={}, _h=30, _title=wo.Title or "Button" }
-                local dB=H.Sq(17); dB.Color=Theme.TabActive ; wg._drawings.b=dB
+                local dB=H.Sq(17,true,Theme.Corner); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
                 local dA=H.Txt(18); dA.Color=Theme.SubText; dA.Text=">" ; wg._drawings.a=dA
                 wg._upd = function(x,y,w)
