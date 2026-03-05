@@ -321,26 +321,36 @@ function UI:Window(opts)
         local SB_W   = 8
         local cx     = W._pos.X + SB + P
         local cy     = W._pos.Y + TH + P
-        local cw     = W.Size.X - SB - P*2 - SB_W - 4  -- leave room for scrollbar
-        local viewH  = W.Size.Y - TH - P*2              -- visible content height
+        local cw     = W.Size.X - SB - P*2 - SB_W - 4
         local plrH   = 52
-        local availH = viewH - plrH                     -- don't overlap player card
+        local availH = W.Size.Y - TH - P*2 - plrH
 
-        -- first pass: measure total content height
-        local T      = W._activeTab
-        T._scroll    = T._scroll or 0
+        local T    = W._activeTab
+        T._scroll  = T._scroll or 0
+        local secs = T._sections
+
+        -- PASS 1: layout everything at scroll=0 just to get real _h values
+        local rowY   = cy
+        local i      = 1
         local totalH = 0
-        local secs   = T._sections
-        local i = 1
+        local rowData = {}  -- store {s1, s2 or nil, y, rowH}
         while i <= #secs do
             local s1 = secs[i]
             local s2 = secs[i+1]
-            -- we need _h from last frame; force a dry measure
             if s1._paired and s2 and s2._paired and s1._pg == s2._pg then
-                totalH = totalH + math.max(s1._h, s2._h) + P
+                local hw = (cw-P)/2
+                s1._upd(cx,        rowY, hw)
+                s2._upd(cx+hw+P,   rowY, hw)
+                local rowH = math.max(s1._h, s2._h)
+                table.insert(rowData, {s1=s1, s2=s2, y=rowY, h=rowH, hw=hw})
+                totalH = totalH + rowH + P
+                rowY   = rowY + rowH + P
                 i = i + 2
             else
+                s1._upd(cx, rowY, cw)
+                table.insert(rowData, {s1=s1, y=rowY, h=s1._h})
                 totalH = totalH + s1._h + P
+                rowY   = rowY + s1._h + P
                 i = i + 1
             end
         end
@@ -349,45 +359,34 @@ function UI:Window(opts)
         local maxScroll = math.max(0, totalH - availH)
         T._scroll = math.clamp(T._scroll, 0, maxScroll)
 
-        -- second pass: layout with scroll offset, hide sections outside visible bounds
+        -- PASS 2: reposition with scroll offset, hide anything outside window bounds
         local clipTop    = cy
         local clipBottom = cy + availH
-        local rowY = cy - T._scroll
-        i = 1
-        while i <= #secs do
-            local s1 = secs[i]
-            local s2 = secs[i+1]
-            if s1._paired and s2 and s2._paired and s1._pg == s2._pg then
-                local hw    = (cw-P)/2
-                local rowH  = math.max(s1._h, s2._h)
-                -- hide if fully above or fully below visible area
-                if rowY + rowH < clipTop or rowY > clipBottom then
-                    s1._hide(); s2._hide()
+        for _, row in ipairs(rowData) do
+            local scrolledY = row.y - T._scroll
+            local inView = (scrolledY + row.h) > clipTop and scrolledY < clipBottom
+
+            if inView then
+                if row.s2 then
+                    row.s1._upd(cx,            scrolledY, row.hw)
+                    row.s2._upd(cx+row.hw+P,   scrolledY, row.hw)
                 else
-                    s1._upd(cx, rowY, hw)
-                    s2._upd(cx+hw+P, rowY, hw)
+                    row.s1._upd(cx, scrolledY, cw)
                 end
-                rowY = rowY + rowH + P
-                i = i + 2
             else
-                local rowH = s1._h
-                if rowY + rowH < clipTop or rowY > clipBottom then
-                    s1._hide()
-                else
-                    s1._upd(cx, rowY, cw)
-                end
-                rowY = rowY + rowH + P
-                i = i + 1
+                row.s1._hide()
+                if row.s2 then row.s2._hide() end
             end
         end
 
+        -- hide inactive tabs
         for _, tab in ipairs(W._tabs) do
             if tab ~= T then
                 for _, s in ipairs(tab._sections) do s._hide() end
             end
         end
 
-        -- draw content scrollbar only when content overflows
+        -- scrollbar
         if maxScroll > 0 then
             local trackX = W._pos.X + W.Size.X - SB_W - P
             local trackY = cy
