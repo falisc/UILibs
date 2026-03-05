@@ -705,6 +705,13 @@ function UI:Window(opts)
                 local dTr=H.Sq(17,true,9) ; wg._drawings.tr=dTr
                 local dK=H.Circ(18); dK.Color=Color3.fromRGB(255,255,255); dK.NumSides=30; dK.Radius=7 ; wg._drawings.k=dK
 
+                -- Inline keybind box (sits between label and toggle track)
+                local dKb=H.Sq(17,true,4); dKb.Color=Theme.TabActive ; wg._drawings.kb=dKb
+                local dKt=H.Txt(18,10);    dKt.Color=Theme.SubText   ; wg._drawings.kt=dKt
+                local _key      = nil   -- no key by default
+                local _changing = false
+                local _changeT  = 0
+
                 -- Progress 0 = OFF (left), 1 = ON (right)
                 local _prog = wg._value and 1 or 0
 
@@ -718,16 +725,33 @@ function UI:Window(opts)
 
                 wg._upd = function(x,y,w,ct,cb)
                     local vis = H.InClip(y, wg._h, ct, cb)
-                    local tw=36; local th=18; local tx=x+w-tw; local ty=y+6
+                    local tw=36; local th=18
+                    -- keybind box sits just left of the toggle track
+                    local kbW = 36; local kbH = 18
+                    local kbX = x+w - tw - kbW - 6
+                    local kbY = y+6
+                    local tx  = x+w-tw; local ty=y+6
                     local tTop = ct and math.max(ty, ct) or ty
                     local tBot = cb and math.min(ty+th, cb) or ty+th
                     local tH   = math.max(0, tBot - tTop)
 
-                    -- Lerp progress toward target (0 or 1) — speed 0.07 = ~200ms animation
+                    -- Keybind box clamped to clip
+                    local kbTop = ct and math.max(kbY, ct) or kbY
+                    local kbBot = cb and math.min(kbY+kbH, cb) or kbY+kbH
+                    local kbH2  = math.max(0, kbBot - kbTop)
+                    local kbVis = vis and kbH2 > 0
+                    dKb.Position=H.Vec2(kbX, kbTop); dKb.Size=H.Vec2(kbW, kbH2)
+                    dKb.Color = _changing and Theme.Accent or Theme.TabActive
+                    dKb.Corner=4; dKb.Visible=kbVis
+                    local ks = _changing and "..." or (_key and H.KeyName(_key) or "—")
+                    dKt.Text=ks
+                    dKt.Position=H.Vec2(kbX+4, kbY+3)
+                    dKt.Visible=kbVis and H.TxtClip(kbY+3, 10, ct, cb)
+
+                    -- Lerp progress toward target
                     local targetProg = wg._value and 1 or 0
                     _prog = _prog + (targetProg - _prog) * 0.04
 
-                    -- Derive knob X and track color from progress
                     local kxLeft  = tx + 1
                     local kxRight = tx + tw - th + 1
                     local kxAnim  = kxLeft + (kxRight - kxLeft) * _prog
@@ -741,8 +765,39 @@ function UI:Window(opts)
                     dK.Visible=vis and H.TxtClip(ky-7, 14, ct, cb)
                 end
                 wg._click = function()
+                    -- Toggle track click
                     if dTr.Visible and H.InRect(dTr.Position,dTr.Size) then
                         wg._value = not wg._value; cb(wg._value)
+                    end
+                    -- Keybind box click — start capturing
+                    if dKb.Visible and H.InRect(dKb.Position,dKb.Size) and not _changing then
+                        _changing = true; _changeT = os.clock()
+                    end
+                end
+                wg._poll = function()
+                    -- Fire toggle via key (keysDown = only on press, not held)
+                    if _key and Input.keysDown[_key] then
+                        wg._value = not wg._value; cb(wg._value)
+                    end
+                    -- Capture new key
+                    if _changing then
+                        if (os.clock() - _changeT) < 0.15 then return end
+                        if iskeypressed(0x1B) then
+                            -- ESC clears the key
+                            _changing = false; _key = nil; return
+                        end
+                        for _, k in ipairs(ALL_KEYS) do
+                            if iskeypressed(k) then
+                                if _key then
+                                    -- remove old key from tracked if no other widget uses it
+                                    -- (simple: just leave it, polling a silent key is harmless)
+                                end
+                                _key = k
+                                table.insert(W._tracked, k)
+                                _changing = false; _changeT = os.clock()
+                                return
+                            end
+                        end
                     end
                 end
                 table.insert(S._widgets, wg)
