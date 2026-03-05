@@ -705,9 +705,8 @@ function UI:Window(opts)
                 local dTr=H.Sq(17,true,9) ; wg._drawings.tr=dTr
                 local dK=H.Circ(18); dK.Color=Color3.fromRGB(255,255,255); dK.NumSides=30; dK.Radius=7 ; wg._drawings.k=dK
 
-                -- Animation state: knob X and track color lerped each frame
-                local _kxAnim   = nil  -- nil = not yet initialized
-                local _colAnim  = wg._value and Theme.ToggleOn or Theme.ToggleOff
+                -- Progress 0 = OFF (left), 1 = ON (right)
+                local _prog = wg._value and 1 or 0
 
                 local function lerpColor(a, b, t)
                     return Color3.new(
@@ -724,24 +723,21 @@ function UI:Window(opts)
                     local tBot = cb and math.min(ty+th, cb) or ty+th
                     local tH   = math.max(0, tBot - tTop)
 
-                    -- Target values
-                    local targetKx  = wg._value and (tx+tw-th+1) or (tx+1)
-                    local targetCol = wg._value and Theme.ToggleOn or Theme.ToggleOff
+                    -- Lerp progress toward target (0 or 1) — speed 0.07 = ~200ms animation
+                    local targetProg = wg._value and 1 or 0
+                    _prog = _prog + (targetProg - _prog) * 0.07
 
-                    -- Init anim state on first frame so knob doesn't fly from 0,0
-                    if _kxAnim == nil then _kxAnim = targetKx end
-
-                    -- Lerp knob X position and track color
-                    local speed = 0.18
-                    _kxAnim  = _kxAnim  + (targetKx  - _kxAnim)  * speed
-                    _colAnim = lerpColor(_colAnim, targetCol, speed)
-
+                    -- Derive knob X and track color from progress
+                    local kxLeft  = tx + 1
+                    local kxRight = tx + tw - th + 1
+                    local kxAnim  = kxLeft + (kxRight - kxLeft) * _prog
+                    local colAnim = lerpColor(Theme.ToggleOff, Theme.ToggleOn, _prog)
                     local ky = ty + th/2
 
                     dT.Position=H.Vec2(x,y+7); dT.Visible=vis and H.TxtClip(y+7, Theme.FontSize, ct, cb)
                     dTr.Position=H.Vec2(tx,tTop); dTr.Size=H.Vec2(tw,tH)
-                    dTr.Color=_colAnim; dTr.Corner=9; dTr.Visible=vis and tH>0
-                    dK.Position=H.Vec2(_kxAnim + th/2 - 1, ky)
+                    dTr.Color=colAnim; dTr.Corner=9; dTr.Visible=vis and tH>0
+                    dK.Position=H.Vec2(kxAnim + th/2 - 1, ky)
                     dK.Visible=vis and H.TxtClip(ky-7, 14, ct, cb)
                 end
                 wg._click = function()
