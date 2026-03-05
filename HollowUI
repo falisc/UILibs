@@ -349,21 +349,34 @@ function UI:Window(opts)
         local maxScroll = math.max(0, totalH - availH)
         T._scroll = math.clamp(T._scroll, 0, maxScroll)
 
-        -- second pass: layout with scroll offset
+        -- second pass: layout with scroll offset, hide sections outside visible bounds
+        local clipTop    = cy
+        local clipBottom = cy + availH
         local rowY = cy - T._scroll
         i = 1
         while i <= #secs do
             local s1 = secs[i]
             local s2 = secs[i+1]
             if s1._paired and s2 and s2._paired and s1._pg == s2._pg then
-                local hw = (cw-P)/2
-                s1._upd(cx, rowY, hw)
-                s2._upd(cx+hw+P, rowY, hw)
-                rowY = rowY + math.max(s1._h, s2._h) + P
+                local hw    = (cw-P)/2
+                local rowH  = math.max(s1._h, s2._h)
+                -- hide if fully above or fully below visible area
+                if rowY + rowH < clipTop or rowY > clipBottom then
+                    s1._hide(); s2._hide()
+                else
+                    s1._upd(cx, rowY, hw)
+                    s2._upd(cx+hw+P, rowY, hw)
+                end
+                rowY = rowY + rowH + P
                 i = i + 2
             else
-                s1._upd(cx, rowY, cw)
-                rowY = rowY + s1._h + P
+                local rowH = s1._h
+                if rowY + rowH < clipTop or rowY > clipBottom then
+                    s1._hide()
+                else
+                    s1._upd(cx, rowY, cw)
+                end
+                rowY = rowY + rowH + P
                 i = i + 1
             end
         end
