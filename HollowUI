@@ -90,7 +90,8 @@ function H.Sq(z, filled, corner)
 end
 function H.Txt(z, size, outline)
     local t = Drawing.new("Text")
-    t.ZIndex = z or 0; t.Size = size or Theme.FontSize; t.Outline = outline ~= false; t.Visible = false
+    t.ZIndex = z or 0; t.Size = size or Theme.FontSize; t.Outline = outline ~= false
+    t.Font = Drawing.Fonts.SystemBold; t.Visible = false
     return t
 end
 function H.Ln(z, thickness)
@@ -190,8 +191,18 @@ function UI:Window(opts)
     local dMinL = H.Ln(14,2)       ; dMinL.Color= Theme.Text        ; W._drawings.minL = dMinL
     local dSep  = H.Ln(12,1)       ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep
 
-    local clsR = {pos=H.Vec2(0,0), size=H.Vec2(18,18)}
-    local minR = {pos=H.Vec2(0,0), size=H.Vec2(18,18)}
+    -- Player info panel (bottom of sidebar)
+    local dPlrBg   = H.Sq(12,true,0)  ; dPlrBg.Color   = Theme.TabActive    ; W._drawings.plrBg   = dPlrBg
+    local dPlrIcon = H.Sq(13,true,Theme.Corner) ; dPlrIcon.Color = Theme.Accent ; W._drawings.plrIcon = dPlrIcon
+    local dPlrInitial = H.Txt(14,12)  ; dPlrInitial.Color = Theme.Text       ; W._drawings.plrInitial = dPlrInitial
+    local dPlrName = H.Txt(13,12)     ; dPlrName.Color  = Theme.Text         ; W._drawings.plrName = dPlrName
+    local dPlrDisp = H.Txt(13,10)     ; dPlrDisp.Color  = Theme.SubText      ; W._drawings.plrDisp = dPlrDisp
+
+    local _plrName    = LocalPlayer.Name
+    local _plrDisplay = LocalPlayer.DisplayName
+    dPlrName.Text     = _plrName
+    dPlrDisp.Text     = "@".._plrName
+    dPlrInitial.Text  = string.upper(string.sub(_plrName, 1, 1))
 
     W._draw = function()
         local pos  = W._pos
@@ -230,6 +241,29 @@ function UI:Window(opts)
 
         dSep.From=pos+H.Vec2(0,TH); dSep.To=pos+H.Vec2(sz.X,TH); dSep.Visible=W._open
 
+        -- Player info at bottom of sidebar
+        local plrH = 48
+        local plrY = pos.Y + sz.Y - plrH
+        dPlrBg.Position = pos + H.Vec2(0, sz.Y - plrH)
+        dPlrBg.Size     = H.Vec2(SB, plrH)
+        dPlrBg.Visible  = vis
+
+        local iconSize = 30
+        local iconX = pos.X + P
+        local iconY = plrY + plrH/2 - iconSize/2
+        dPlrIcon.Position = H.Vec2(iconX, iconY)
+        dPlrIcon.Size     = H.Vec2(iconSize, iconSize)
+        dPlrIcon.Visible  = vis
+
+        dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6)
+        dPlrInitial.Visible  = vis
+
+        dPlrName.Position = H.Vec2(iconX + iconSize + 6, iconY + 4)
+        dPlrName.Visible  = vis
+
+        dPlrDisp.Position = H.Vec2(iconX + iconSize + 6, iconY + 18)
+        dPlrDisp.Visible  = vis
+
         local tabY = TH + P
         for _, tab in ipairs(W._tabs) do
             tab._draw(tabY, vis)
@@ -238,7 +272,13 @@ function UI:Window(opts)
     end
 
     W._layout = function()
-        if not W._open or not W._activeTab then return end
+        if not W._open or not W._activeTab then
+            -- hide everything when closed
+            for _, tab in ipairs(W._tabs) do
+                for _, s in ipairs(tab._sections) do s._hide() end
+            end
+            return
+        end
         -- Always hide all sections first if minimized
         if W._minimized then
             for _, tab in ipairs(W._tabs) do
@@ -637,6 +677,9 @@ function UI:Window(opts)
                 wg._upd = function(x,y,w)
                     wg._h = wg._open and (32+wg._maxShow*26+4) or 32
                     local st=#wg._value>0 and table.concat(wg._value,", ") or "None"
+                    -- truncate text so it doesnt overflow button
+                    local maxChars = math.floor((w - 60) / 7)
+                    if #st > maxChars then st = string.sub(st, 1, maxChars-2) .. ".." end
                     dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=true
                     dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=true
                     dA.Text=wg._open and "▲" or "▼"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=true
