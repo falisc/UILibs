@@ -185,7 +185,7 @@ function UI:Window(opts)
     local SB    = 180
     local TH    = 46
     local P     = Theme.Padding
-    local CR    = (opts.Rounded == false) and 0 or CR
+    local CR    = (opts.Rounded == false) and 0 or Theme.Corner
     local vp  = game:GetService("Workspace").CurrentCamera.ViewportSize
     W._pos    = H.Vec2(vp.X/2 - W.Size.X/2, vp.Y/2 - W.Size.Y/2)
 
