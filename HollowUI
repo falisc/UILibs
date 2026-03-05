@@ -725,7 +725,7 @@ function UI:Window(opts)
 
                     -- Lerp progress toward target (0 or 1) — speed 0.07 = ~200ms animation
                     local targetProg = wg._value and 1 or 0
-                    _prog = _prog + (targetProg - _prog) * 0.07
+                    _prog = _prog + (targetProg - _prog) * 0.04
 
                     -- Derive knob X and track color from progress
                     local kxLeft  = tx + 1
