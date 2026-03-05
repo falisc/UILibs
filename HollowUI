@@ -65,7 +65,7 @@ local Theme = {
     SliderFill    = Color3.fromRGB(100, 100, 220),
     SliderBg      = Color3.fromRGB(45, 45, 55),
     Border        = Color3.fromRGB(45, 45, 55),
-    CloseBtn      = Color3.fromRGB(200, 60, 60),
+    CloseBtn      = Color3.fromRGB(100, 100, 220),
     MinimizeBtn   = Color3.fromRGB(60, 60, 70),
     Corner        = 6,
     Padding       = 8,
@@ -193,7 +193,7 @@ function UI:Window(opts)
     local dSideTop = H.Sq(11,true,0) ; dSideTop.Color = Theme.Sidebar ; W._drawings.sideTop = dSideTop
     local dSideB= H.Sq(12,true,0) ; dSideB.Color= Theme.Border ; W._drawings.sideB= dSideB
     local dTtl  = H.Txt(13,Theme.TitleSize) ; dTtl.Color=Theme.Text    ; dTtl.Text=W.Title    ; W._drawings.ttl=dTtl
-    local dSub  = H.Txt(13,11)              ; dSub.Color=Theme.SubText ; dSub.Text=W.Subtitle ; W._drawings.sub=dSub
+    local dSub  = H.Txt(13,13)              ; dSub.Color=Theme.SubText ; dSub.Text=W.Subtitle ; W._drawings.sub=dSub
     local dCls  = H.Sq(13,true,4)  ; dCls.Color = Theme.CloseBtn   ; W._drawings.cls  = dCls
     local dCX1  = H.Ln(14,2)       ; dCX1.Color = Theme.Text        ; W._drawings.cx1  = dCX1
     local dCX2  = H.Ln(14,2)       ; dCX2.Color = Theme.Text        ; W._drawings.cx2  = dCX2
@@ -246,7 +246,7 @@ function UI:Window(opts)
 
         dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = W._open
         if W.Subtitle ~= "" then
-            dSub.Position = dTtl.Position + H.Vec2(H.TextSize(W.Title, Theme.TitleSize).X+8, 4)
+            dSub.Position = pos + H.Vec2(P+4 + H.TextSize(W.Title, Theme.TitleSize).X + 6, TH/2 - 6)
             dSub.Visible  = W._open
         else dSub.Visible = false end
 
@@ -331,8 +331,7 @@ function UI:Window(opts)
         local cx     = W._pos.X + SB + P
         local cy     = W._pos.Y + TH + P
         local cw     = W.Size.X - SB - P*2 - SB_W - 4
-        local plrH   = 52
-        local availH = W.Size.Y - TH - P*2 - plrH
+        local availH = W.Size.Y - TH - P*2
         local clipTop    = cy
         local clipBottom = cy + availH
 
@@ -475,8 +474,7 @@ function UI:Window(opts)
         if W._csbDrag and Input.m1 and W._activeTab then
             local T = W._activeTab
             local cy     = W._pos.Y + TH + P
-            local plrH   = 52
-            local availH = W.Size.Y - TH - P*2 - plrH
+            local availH = W.Size.Y - TH - P*2
             -- measure total height same way as _layout
             local totalH = 0
             for _, s in ipairs(T._sections) do totalH = totalH + s._h + P end
@@ -629,7 +627,7 @@ function UI:Window(opts)
                     -- Title text — only show if its Y is inside clip
                     local stY = y + HH/2 - 6
                     dSt.Position = H.Vec2(x + ip, stY)
-                    dSt.Visible  = (not ct or stY + 12 > ct) and (not cb or stY < cb)
+                    dSt.Visible  = H.InClip(stY, 12, ct, cb)
                 else
                     dHd.Visible=false; dHf.Visible=false; dSt.Visible=false
                 end
@@ -680,8 +678,9 @@ function UI:Window(opts)
                     local bBot = cb and math.min(y+26, cb) or y+26
                     local bH   = math.max(0, bBot - bTop)
                     dB.Position=H.Vec2(x,bTop); dB.Size=H.Vec2(w,bH); dB.Visible=vis and bH>0
-                    dT.Position=H.Vec2(x+8,y+5); dT.Visible=vis and (not ct or y+5+Theme.FontSize > ct) and (not cb or y+5 < cb)
-                    dA.Position=H.Vec2(x+w-18,y+5); dA.Visible=vis and (not ct or y+5+Theme.FontSize > ct) and (not cb or y+5 < cb)
+                    local tVis = vis and H.InClip(y+5, Theme.FontSize, ct, cb)
+                    dT.Position=H.Vec2(x+8,y+5); dT.Visible=tVis
+                    dA.Position=H.Vec2(x+w-18,y+5); dA.Visible=tVis
                 end
                 wg._click = function()
                     if dB.Visible and H.InRect(dB.Position,dB.Size) then cb() end
@@ -699,16 +698,15 @@ function UI:Window(opts)
                 wg._upd = function(x,y,w,ct,cb)
                     local vis = H.InClip(y, wg._h, ct, cb)
                     local tw=36; local th=18; local tx=x+w-tw; local ty=y+6
-                    -- Clamp toggle track
                     local tTop = ct and math.max(ty, ct) or ty
                     local tBot = cb and math.min(ty+th, cb) or ty+th
                     local tH   = math.max(0, tBot - tTop)
-                    dT.Position=H.Vec2(x,y+7); dT.Visible=vis and (not ct or y+7+Theme.FontSize > ct) and (not cb or y+7 < cb)
+                    dT.Position=H.Vec2(x,y+7); dT.Visible=vis and H.InClip(y+7, Theme.FontSize, ct, cb)
                     dTr.Position=H.Vec2(tx,tTop); dTr.Size=H.Vec2(tw,tH)
                     dTr.Color=wg._value and Theme.ToggleOn or Theme.ToggleOff; dTr.Corner=9; dTr.Visible=vis and tH>0
                     local kx = wg._value and (tx+tw-th+1) or (tx+1)
                     local ky = ty+th/2
-                    dK.Position=H.Vec2(kx+th/2-1, ky); dK.Visible=vis and (not ct or ky > ct) and (not cb or ky < cb)
+                    dK.Position=H.Vec2(kx+th/2-1, ky); dK.Visible=vis and H.InClip(ky-7, 14, ct, cb)
                 end
                 wg._click = function()
                     if dTr.Visible and H.InRect(dTr.Position,dTr.Size) then
@@ -750,7 +748,7 @@ function UI:Window(opts)
                     local sTop = ct and math.max(ty, ct) or ty
                     local sBot = cb and math.min(ty+12, cb) or ty+12
                     local sH   = math.max(0, sBot - sTop)
-                    dTt.Position=H.Vec2(x,y+2); dTt.Visible=vis and (not ct or y+2+Theme.FontSize > ct) and (not cb or y+2 < cb)
+                    dTt.Position=H.Vec2(x,y+2); dTt.Visible=vis and H.InClip(y+2, Theme.FontSize, ct, cb)
                     wg._tp=H.Vec2(x,ty); wg._ts=H.Vec2(w,12)
                     dTr.Position=H.Vec2(x,sTop); dTr.Size=H.Vec2(w,sH); dTr.Visible=vis and sH>0
                     local pct=math.clamp((wg._value-wg._min)/(wg._max-wg._min),0,1)
@@ -809,7 +807,7 @@ function UI:Window(opts)
                     local bH   = math.max(0, bBot - bTop)
                     local vis  = bH > 0
                     dB.Position=H.Vec2(x,bTop); dB.Size=H.Vec2(w,bH); dB.Visible=vis
-                    local txtVis = vis and (not ct or y+7+Theme.FontSize > ct) and (not cb or y+7 < cb)
+                    local txtVis = vis and H.InClip(y+7, Theme.FontSize, ct, cb)
                     dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=txtVis
                     dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=txtVis
 
@@ -827,7 +825,7 @@ function UI:Window(opts)
                             local ovis = oH > 0
                             o.b.Position=H.Vec2(x,oTop); o.b.Size=H.Vec2(rowW,oH)
                             o.b.Color=(opt==wg._value) and Theme.Accent or Theme.Section; o.b.Visible=ovis
-                            local otVis = ovis and (not ct or oy+5+Theme.FontSize > ct) and (not cb or oy+5 < cb)
+                            local otVis = ovis and H.InClip(oy+5, Theme.FontSize, ct, cb)
                             o.t.Text=opt; o.t.Position=H.Vec2(x+8,oy+5); o.t.Visible=otVis
                         else o.b.Visible=false; o.t.Visible=false end
                     end
@@ -923,7 +921,7 @@ function UI:Window(opts)
                     local bH   = math.max(0, bBot - bTop)
                     local vis  = bH > 0
                     dB.Position=H.Vec2(x,bTop); dB.Size=H.Vec2(w,bH); dB.Visible=vis
-                    local txtVis = vis and (not ct or y+7+Theme.FontSize > ct) and (not cb or y+7 < cb)
+                    local txtVis = vis and H.InClip(y+7, Theme.FontSize, ct, cb)
                     dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=txtVis
                     dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=txtVis
 
@@ -942,7 +940,7 @@ function UI:Window(opts)
                             local ovis = oH > 0
                             o.b.Position=H.Vec2(x,oTop); o.b.Size=H.Vec2(rowW,oH)
                             o.b.Color=sel and Theme.Accent or Theme.Section; o.b.Visible=ovis
-                            local otVis = ovis and (not ct or oy+5+Theme.FontSize > ct) and (not cb or oy+5 < cb)
+                            local otVis = ovis and H.InClip(oy+5, Theme.FontSize, ct, cb)
                             o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=otVis
                             o.c.Position=H.Vec2(x+6,oy+5); o.c.Size=H.Vec2(14,14)
                             o.c.Color=sel and Theme.Accent or Theme.SliderBg; o.c.Corner=3; o.c.Visible=otVis
@@ -1019,11 +1017,11 @@ function UI:Window(opts)
                 if wg._key then table.insert(W._tracked, wg._key) end
                 wg._upd = function(x,y,w,ct,cb)
                     local vis = H.InClip(y, wg._h, ct, cb)
-                    dTt.Position=H.Vec2(x,y+7); dTt.Visible=vis
+                    dTt.Position=H.Vec2(x,y+7); dTt.Visible=vis and H.InClip(y+7, Theme.FontSize, ct, cb)
                     local ks=wg._changing and "..." or H.KeyName(wg._key)
                     local kw=math.max(44,#ks*8+12)
-                    dKb.Position=H.Vec2(x+w-kw,y+3); dKb.Size=H.Vec2(kw,22); dKb.Visible=vis
-                    dKt.Text=ks; dKt.Position=H.Vec2(x+w-kw+5,y+8); dKt.Visible=vis
+                    dKb.Position=H.Vec2(x+w-kw,y+3); dKb.Size=H.Vec2(kw,22); dKb.Visible=vis and H.InClip(y+3, 22, ct, cb)
+                    dKt.Text=ks; dKt.Position=H.Vec2(x+w-kw+5,y+8); dKt.Visible=vis and H.InClip(y+8, 11, ct, cb)
                 end
                 wg._click = function()
                     if dKb.Visible and H.InRect(dKb.Position,dKb.Size) then
