@@ -223,26 +223,6 @@ local ALL_KEYS = {
     0xA0,0xA1,0xA2,0xA3,0x1B,0x20,0x0D,
 }
 
-local Input = {
-    m1 = false, m1Last = false, m1Down = false, m1Up = false,
-    keys = {}, keysLast = {}, keysDown = {},
-}
-function Input.Poll(tracked)
-    Input.m1Last = Input.m1
-    Input.m1     = ismouse1pressed()
-    Input.m1Down = Input.m1 and not Input.m1Last
-    Input.m1Up   = not Input.m1 and Input.m1Last
-    local seen = {}
-    for _, k in ipairs(tracked) do
-        if not seen[k] then
-            seen[k] = true
-            Input.keysLast[k] = Input.keys[k]
-            Input.keys[k]     = iskeypressed(k)
-            Input.keysDown[k] = Input.keys[k] and not Input.keysLast[k]
-        end
-    end
-end
-
 UI = {}
 UI.__index = UI
 
@@ -264,6 +244,27 @@ function UI:Window(opts)
     W._drawings   = {}
 
     if opts.Theme and Themes[opts.Theme] then Theme = Themes[opts.Theme] end
+
+    -- Per-window input state so re-executing the script does not stomp a shared global
+    local Input = {
+        m1 = false, m1Last = false, m1Down = false, m1Up = false,
+        keys = {}, keysLast = {}, keysDown = {},
+    }
+    local function pollInput(tracked)
+        Input.m1Last = Input.m1
+        Input.m1     = ismouse1pressed()
+        Input.m1Down = Input.m1 and not Input.m1Last
+        Input.m1Up   = not Input.m1 and Input.m1Last
+        local seen = {}
+        for _, k in ipairs(tracked) do
+            if not seen[k] then
+                seen[k] = true
+                Input.keysLast[k] = Input.keys[k]
+                Input.keys[k]     = iskeypressed(k)
+                Input.keysDown[k] = Input.keys[k] and not Input.keysLast[k]
+            end
+        end
+    end
 
     W._tracked    = { W.Key, 0x1B }
 
@@ -495,6 +496,7 @@ function UI:Window(opts)
 
         if Input.keysDown[W.Key] then
             if anyChanging then
+                -- cancel the keybind capture instead of toggling the window
                 for _, tab in ipairs(W._tabs) do
                     for _, s in ipairs(tab._sections) do
                         for _, wg in ipairs(s._widgets) do
@@ -502,8 +504,9 @@ function UI:Window(opts)
                         end
                     end
                 end
+            else
+                W._open = not W._open
             end
-            W._open = not W._open
         end
 
         -- Only handle clicks/drags when actually open (not just fading)
@@ -586,7 +589,7 @@ function UI:Window(opts)
     spawn(function()
         while W._running do
             local ok, err = pcall(function()
-                Input.Poll(W._tracked)
+                pollInput(W._tracked)
                 W._pollActions()
                 W._input()
                 W._draw()
@@ -654,29 +657,49 @@ function UI:Window(opts)
 
         local function mkSec(so)
             so = so or {}
-            local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil }
+            local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil, _collapsed=false, _collapseProg=1 }
 
-            local dBs = H.Sq(14)        ; dBs.Color = Theme.Section       ; S._drawings.bs = dBs
-            local dHd = H.Sq(15)        ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd
-            local dHf = H.Sq(15,true,0) ; dHf.Color = Theme.SectionHeader ; S._drawings.hf = dHf
-            local dSt = H.Txt(16,12)    ; dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt
+            local dBs  = H.Sq(14)        ; dBs.Color  = Theme.Section       ; S._drawings.bs  = dBs
+            local dHd  = H.Sq(15)        ; dHd.Color  = Theme.SectionHeader ; S._drawings.hd  = dHd
+            local dHf  = H.Sq(15,true,0) ; dHf.Color  = Theme.SectionHeader ; S._drawings.hf  = dHf
+            local dSt  = H.Txt(16,12)    ; dSt.Color  = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt
+            -- chevron shown only when section has a title (collapsible)
+            local dChv = H.Txt(16,10)    ; dChv.Color = Theme.SubText ; S._drawings.chv = dChv
+            -- hit rect for header click
+            local _hdRect = { pos=H.Vec2(0,0), size=H.Vec2(0,0) }
 
             S._measure = function(w)
                 local HH = S._title ~= "" and 28 or 0
                 local ip = P
+                -- when collapsed only the header shows
+                if S._collapsed and S._collapseProg < 0.01 then
+                    S._h = HH > 0 and HH or 50
+                    return
+                end
                 local th = HH + ip
                 for _, wg in ipairs(S._widgets) do th = th + wg._h + ip/2 end
                 th = th + ip/2
-                S._h = math.max(th, 50)
+                -- lerp height for smooth collapse
+                local fullH = math.max(th, 50)
+                local collH = HH > 0 and HH or 50
+                S._h = collH + (fullH - collH) * S._collapseProg
             end
 
             S._upd = function(x, y, w, ct, cbot)
+                -- animate collapse prog
+                local colTarget = S._collapsed and 0 or 1
+                S._collapseProg = S._collapseProg + (colTarget - S._collapseProg) * 0.12
+                if S._collapseProg < 0.004 then S._collapseProg = 0 end
+                if S._collapseProg > 0.996 then S._collapseProg = 1 end
+
                 local HH = S._title ~= "" and 28 or 0
                 local ip = P
-                local th = HH + ip
-                for _, wg in ipairs(S._widgets) do th = th + wg._h + ip/2 end
-                th = th + ip/2
-                S._h = math.max(th, 50)
+                local fullTh = HH + ip
+                for _, wg in ipairs(S._widgets) do fullTh = fullTh + wg._h + ip/2 end
+                fullTh = fullTh + ip/2
+                local fullH = math.max(fullTh, 50)
+                local collH = HH > 0 and HH or 50
+                S._h = collH + (fullH - collH) * S._collapseProg
 
                 local sTop = ct and math.max(y, ct) or y
                 local sBot = cbot and math.min(y + S._h, cbot) or (y + S._h)
@@ -689,6 +712,7 @@ function UI:Window(opts)
                     local hdTop = ct and math.max(y, ct) or y
                     local hdBot = cbot and math.min(y+HH, cbot) or y+HH
                     local hdH   = math.max(0, hdBot - hdTop)
+                    _hdRect.pos  = H.Vec2(x, hdTop); _hdRect.size = H.Vec2(w, HH)
                     dHd.Position = H.Vec2(x, hdTop); dHd.Size = H.Vec2(w, hdH); dHd.Corner = CR
                     dHd.Visible  = hdH > 0
                     if dHd.Visible then dHd.Transparency = _openProg end
@@ -698,14 +722,29 @@ function UI:Window(opts)
                     dSt.Position = H.Vec2(x+ip, y+HH/2-6)
                     dSt.Visible  = H.TxtClip(y+HH/2-6, Theme.FontSize, ct, cbot)
                     if dSt.Visible then dSt.Transparency = _openProg end
+                    -- chevron: right-aligned, rotates based on collapse state
+                    dChv.Text     = S._collapsed and ">" or "v"
+                    dChv.Position = H.Vec2(x+w-14, y+HH/2-5)
+                    dChv.Visible  = H.TxtClip(y+HH/2-5, 10, ct, cbot)
+                    if dChv.Visible then dChv.Transparency = _openProg end
                 else
-                    dHd.Visible = false; dHf.Visible = false; dSt.Visible = false
+                    dHd.Visible = false; dHf.Visible = false; dSt.Visible = false; dChv.Visible = false
                 end
 
-                local wy = y + HH + ip
-                for _, wg in ipairs(S._widgets) do
-                    wg._upd(x+ip, wy, w-ip*2, ct, cbot)
-                    wy = wy + wg._h + ip/2
+                -- draw widgets only when not fully collapsed
+                if S._collapseProg > 0 then
+                    local wy = y + HH + ip
+                    for _, wg in ipairs(S._widgets) do
+                        -- clip widgets additionally to the animated bottom of the section
+                        local animBot = math.min(cbot or (y+S._h), y + S._h)
+                        wg._upd(x+ip, wy, w-ip*2, ct, animBot)
+                        wy = wy + wg._h + ip/2
+                    end
+                else
+                    for _, wg in ipairs(S._widgets) do
+                        for _, d in pairs(wg._drawings) do pcall(function() d.Visible = false end) end
+                        if wg._xd then for _, d in ipairs(wg._xd) do pcall(function() d.Visible = false end) end end
+                    end
                 end
             end
 
@@ -718,8 +757,16 @@ function UI:Window(opts)
             end
 
             S._click = function()
-                for _, wg in ipairs(S._widgets) do
-                    if wg._click then wg._click() end
+                -- check header click for collapse toggle (only when section has title)
+                if S._title ~= "" and dHd.Visible and H.InRect(_hdRect.pos, _hdRect.size) then
+                    S._collapsed = not S._collapsed
+                    return
+                end
+                -- only pass clicks to widgets when not collapsed
+                if S._collapseProg > 0.1 then
+                    for _, wg in ipairs(S._widgets) do
+                        if wg._click then wg._click() end
+                    end
                 end
             end
 
