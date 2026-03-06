@@ -261,7 +261,7 @@ end
 -- ============================================================
 if UI and UI._window then
     pcall(function() UI._window:Unload() end)
-    task.wait(0.1)
+    task.wait(0.3)
 end
 UI = {}
 UI.__index = UI
@@ -587,7 +587,7 @@ function UI:Window(opts)
         if not W._open then return end
 
         if Input.m1Down then
-            if H.InRect(clsR.pos, clsR.size) then W._open = false; return end
+            if H.InRect(clsR.pos, clsR.size) then W:Unload(); return end
             if H.InRect(minR.pos, minR.size) then W._minimized = not W._minimized; return end
             if dSpoofBtn.Visible and H.InRect(spoofR.pos, spoofR.size) then
                 _spoofed = not _spoofed
