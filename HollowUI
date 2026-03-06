@@ -363,14 +363,16 @@ function UI:Window(opts)
         dTtl.Position = H.Vec2(titleX, titleY)
         dTtl.Visible  = isVis; ft(dTtl)
 
-        -- Subtitle: immediately right of title, vertically centered to match title midpoint
+        -- Subtitle: snug right of title, baseline matched to title center
         if W.Subtitle ~= "" then
             local titleCharW = Theme.TitleSize * 0.58
             local titleTextW = #W.Title * titleCharW
             local subX = titleX + titleTextW + 5
-            -- align subtitle (12px tall) to same vertical center as title
-            local subY = pos.Y + TH/2 - 6  -- 12/2 = 6
-            dSub.Position = H.Vec2(subX, subY - 3)
+            -- both title and subtitle share the same vertical midpoint: pos.Y + TH/2
+            -- title is TitleSize(18) tall, subtitle is 12px tall
+            -- center both: titleY = TH/2 - 9, subY = TH/2 - 6
+            local subY = pos.Y + TH/2 - 6
+            dSub.Position = H.Vec2(subX, subY)
             dSub.Visible  = isVis; ft(dSub)
         else
             dSub.Visible = false
@@ -803,29 +805,37 @@ function UI:Window(opts)
 
         local function mkSec(so)
             so = so or {}
-            local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil }
+            local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil, _collapsed=false }
 
             local dBs = H.Sq(14)      ; dBs.Color = Theme.Section       ; S._drawings.bs = dBs
             local dHd = H.Sq(15)      ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd
             local dHf = H.Sq(15,true,0) ; dHf.Color = Theme.SectionHeader ; S._drawings.hf = dHf
             local dSt = H.Txt(16,12)  ; dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt
+            -- Collapse toggle button in section header
+            local dCb = H.Txt(16,11) ; dCb.Color = Theme.SubText ; dCb.Text = "v" ; S._drawings.cb = dCb
+            -- Hit rect for collapse button
+            local _cbRect = {pos=H.Vec2(0,0), size=H.Vec2(16,16)}
 
             S._measure = function(w)
                 local HH = S._title ~= "" and 28 or 0
                 local ip = P
                 local th = HH + ip
-                for _, wg in ipairs(S._widgets) do th = th + wg._h + ip/2 end
-                th = th + ip/2
-                S._h = math.max(th, 50)
+                if not S._collapsed then
+                    for _, wg in ipairs(S._widgets) do th = th + wg._h + ip/2 end
+                    th = th + ip/2
+                end
+                S._h = math.max(th, HH > 0 and HH or 50)
             end
 
             S._upd = function(x, y, w, ct, cbot)
                 local HH = S._title ~= "" and 28 or 0
                 local ip = P
                 local th = HH + ip
-                for _, wg in ipairs(S._widgets) do th = th + wg._h + ip/2 end
-                th = th + ip/2
-                S._h = math.max(th, 50)
+                if not S._collapsed then
+                    for _, wg in ipairs(S._widgets) do th = th + wg._h + ip/2 end
+                    th = th + ip/2
+                end
+                S._h = math.max(th, HH > 0 and HH or 50)
 
                 local sTop = ct and math.max(y, ct) or y
                 local sBot = cbot and math.min(y + S._h, cbot) or (y + S._h)
@@ -843,15 +853,31 @@ function UI:Window(opts)
                     dHf.Position=H.Vec2(x,y+HH/2); dHf.Size=H.Vec2(w,HH/2); dHf.Visible=H.InClip(y+HH/2,HH/2,ct,cbot)
                     if dHf.Visible then dHf.Transparency=_openProg end
                     dSt.Position=H.Vec2(x+ip,y+HH/2-6); dSt.Visible=H.TxtClip(y+HH/2-6,Theme.FontSize,ct,cbot)
-                    
+                    -- Collapse button: right side of header
+                    local cbX = x + w - 16
+                    local cbY = y + HH/2 - 6
+                    _cbRect.pos  = H.Vec2(cbX - 2, y + 2)
+                    _cbRect.size = H.Vec2(18, HH - 4)
+                    dCb.Text     = S._collapsed and ">" or "v"
+                    dCb.Position = H.Vec2(cbX, cbY)
+                    dCb.Visible  = H.TxtClip(cbY, 12, ct, cbot)
+                    if dCb.Visible then dCb.Transparency = _openProg end
                 else
-                    dHd.Visible=false; dHf.Visible=false; dSt.Visible=false
+                    dHd.Visible=false; dHf.Visible=false; dSt.Visible=false; dCb.Visible=false
                 end
 
-                local wy = y + HH + ip
-                for _, wg in ipairs(S._widgets) do
-                    wg._upd(x+ip, wy, w-ip*2, ct, cbot)
-                    wy = wy + wg._h + ip/2
+                if not S._collapsed then
+                    local wy = y + HH + ip
+                    for _, wg in ipairs(S._widgets) do
+                        wg._upd(x+ip, wy, w-ip*2, ct, cbot)
+                        wy = wy + wg._h + ip/2
+                    end
+                else
+                    -- hide all widgets when collapsed
+                    for _, wg in ipairs(S._widgets) do
+                        for _, d in pairs(wg._drawings) do pcall(function() d.Visible=false end) end
+                        if wg._xd then for _, d in ipairs(wg._xd) do pcall(function() d.Visible=false end) end end
+                    end
                 end
             end
 
@@ -864,8 +890,15 @@ function UI:Window(opts)
             end
 
             S._click = function()
-                for _, wg in ipairs(S._widgets) do
-                    if wg._click then wg._click() end
+                -- Check collapse button first
+                if S._title ~= "" and dCb.Visible and H.InRect(_cbRect.pos, _cbRect.size) then
+                    S._collapsed = not S._collapsed
+                    return
+                end
+                if not S._collapsed then
+                    for _, wg in ipairs(S._widgets) do
+                        if wg._click then wg._click() end
+                    end
                 end
             end
 
