@@ -184,6 +184,14 @@ end
 function H.TextSize(text, size)
     return H.Vec2(#text * (size or Theme.FontSize) * 0.55, size or Theme.FontSize)
 end
+function H.InClip(py, ph, ct, cb)
+    if not ct or not cb then return true end
+    return (py + ph) > ct and py < cb
+end
+function H.TxtClip(py, fs, ct, cb)
+    if not ct or not cb then return true end
+    return (py + fs) <= cb and (py + fs) > ct
+end
 function H.Sq(z, filled, corner)
     local s = Drawing.new("Square")
     s.Filled = filled ~= false; s.ZIndex = z or 0; s.Corner = corner or 0; s.Visible = false
