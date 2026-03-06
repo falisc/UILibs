@@ -363,15 +363,14 @@ function UI:Window(opts)
         dTtl.Position = H.Vec2(titleX, titleY)
         dTtl.Visible  = isVis; ft(dTtl)
 
-        -- Subtitle: placed immediately after the title text.
-        -- Use a fixed per-character width of 0.58 * TitleSize for the bold system font.
-        -- Vertically align to the bottom baseline of the title (titleY + TitleSize - SubSize).
+        -- Subtitle: immediately right of title, vertically centered to match title midpoint
         if W.Subtitle ~= "" then
             local titleCharW = Theme.TitleSize * 0.58
             local titleTextW = #W.Title * titleCharW
-            local subX = titleX + titleTextW + 6
-            local subY = titleY + Theme.TitleSize - 12  -- baseline-align subtitle under title cap height
-            dSub.Position = H.Vec2(subX, subY)
+            local subX = titleX + titleTextW + 5
+            -- align subtitle (12px tall) to same vertical center as title
+            local subY = pos.Y + TH/2 - 6  -- 12/2 = 6
+            dSub.Position = H.Vec2(subX, subY - 3)
             dSub.Visible  = isVis; ft(dSub)
         else
             dSub.Visible = false
