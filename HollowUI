@@ -329,10 +329,14 @@ function UI:Window(opts)
     end)
     if _dispName == _userName then
         pcall(function()
-            local dn = LocalPlayer:GetAttribute("DisplayName")
-            if dn then
-                dn = tostring(dn)
-                if dn ~= "" and dn ~= "nil" then _dispName = dn end
+            local userId = tostring(LocalPlayer.UserId)
+            if userId and userId ~= "nil" then
+                local HttpService = game:GetService("HttpService")
+                local resp = game:HttpGet("https://users.roblox.com/v1/users/" .. userId)
+                local data = HttpService:JSONDecode(resp)
+                if data and data.displayName and data.displayName ~= "" then
+                    _dispName = data.displayName
+                end
             end
         end)
     end
@@ -386,11 +390,11 @@ function UI:Window(opts)
         dSideTop.Position = pos + H.Vec2(0,TH); dSideTop.Size = H.Vec2(SB, CR*2); dSideTop.Visible = vis; f(dSideTop)
         dSideB.Position= pos + H.Vec2(SB,TH); dSideB.Size= H.Vec2(1,bodyH); dSideB.Visible= vis; f(dSideB)
 
-        dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = isVis; f(dTtl)
+        dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = isVis and txtVis
         if W.Subtitle ~= "" then
             local titleW = #W.Title * Theme.TitleSize * 0.42
             dSub.Position = pos + H.Vec2(P+4 + titleW + 22, TH/2 - 6)
-            dSub.Visible  = isVis; f(dSub)
+            dSub.Visible  = isVis and txtVis
         else dSub.Visible = false end
 
         local cPos = pos + H.Vec2(sz.X - btn.X - P, TH/2 - btn.Y/2)
@@ -424,11 +428,11 @@ function UI:Window(opts)
         dPlrIcon.Position = H.Vec2(iconX, iconY); dPlrIcon.Size = H.Vec2(iconSize, iconSize)
         dPlrIcon.Visible  = vis; f(dPlrIcon)
         dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6)
-        dPlrInitial.Visible  = vis; f(dPlrInitial)
+        dPlrInitial.Visible  = vis and txtVis
         dPlrName.Position = H.Vec2(iconX + iconSize + 6, iconY + 4)
-        dPlrName.Visible  = vis; f(dPlrName)
+        dPlrName.Visible  = vis and txtVis
         dPlrDisp.Position = H.Vec2(iconX + iconSize + 6, iconY + 18)
-        dPlrDisp.Visible  = vis; f(dPlrDisp)
+        dPlrDisp.Visible  = vis and txtVis
 
         local spBtnSize = 20
         local spBtnX = pos.X + SB - spBtnSize - P
@@ -438,7 +442,7 @@ function UI:Window(opts)
         dSpoofBtn.Color = _spoofed and Theme.Accent or Theme.MinimizeBtn
         dSpoofBtn.Visible = vis; f(dSpoofBtn)
         dSpoofTxt.Position = H.Vec2(spBtnX + 6, spBtnY + 4)
-        dSpoofTxt.Visible = vis; f(dSpoofTxt)
+        dSpoofTxt.Visible = vis and txtVis
 
         local tabY = TH + P
         for _, tab in ipairs(W._tabs) do
