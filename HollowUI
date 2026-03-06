@@ -244,13 +244,10 @@ function UI:Window(opts)
 
         -- Derived values from animation
         local isVis    = _openProg > 0.01
-        local alpha    = 1 - _openProg          -- Transparency: 0=opaque, 1=invisible
         local bodyH    = (sz.Y - TH) * _minProg -- animated body height
         local totalH   = TH + bodyH
         local vis      = isVis and _minProg > 0.01  -- content visible only when body has height
 
-        local function setAlpha(d)
-            if d.Visible then d.Transparency = alpha end
         end
 
         local btn = H.Vec2(18,18)
@@ -259,34 +256,33 @@ function UI:Window(opts)
         dBg.Size      = H.Vec2(sz.X, totalH)
         dBg.Corner    = CR
         dBg.Visible   = isVis
-        dBg.Transparency = alpha
 
-        dTop.Position = pos; dTop.Size = H.Vec2(sz.X, TH); dTop.Corner = CR; dTop.Visible = isVis; dTop.Transparency = alpha
-        dTopF.Position= pos + H.Vec2(0,TH/2); dTopF.Size = H.Vec2(sz.X,TH/2); dTopF.Visible = isVis; dTopF.Transparency = alpha
+        dTop.Position = pos; dTop.Size = H.Vec2(sz.X, TH); dTop.Corner = CR; dTop.Visible = isVis
+        dTopF.Position= pos + H.Vec2(0,TH/2); dTopF.Size = H.Vec2(sz.X,TH/2); dTopF.Visible = isVis
 
-        dSide.Position = pos + H.Vec2(0,TH); dSide.Size = H.Vec2(SB, bodyH); dSide.Corner = CR; dSide.Visible = vis; dSide.Transparency = alpha
-        dSideTop.Position = pos + H.Vec2(0,TH); dSideTop.Size = H.Vec2(SB, CR*2); dSideTop.Visible = vis; dSideTop.Transparency = alpha
-        dSideB.Position= pos + H.Vec2(SB,TH); dSideB.Size= H.Vec2(1,bodyH); dSideB.Visible= vis; dSideB.Transparency = alpha
+        dSide.Position = pos + H.Vec2(0,TH); dSide.Size = H.Vec2(SB, bodyH); dSide.Corner = CR; dSide.Visible = vis
+        dSideTop.Position = pos + H.Vec2(0,TH); dSideTop.Size = H.Vec2(SB, CR*2); dSideTop.Visible = vis
+        dSideB.Position= pos + H.Vec2(SB,TH); dSideB.Size= H.Vec2(1,bodyH); dSideB.Visible= vis
 
-        dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = isVis; dTtl.Transparency = alpha
+        dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = isVis
         if W.Subtitle ~= "" then
             local titleW = #W.Title * Theme.TitleSize * 0.42
             dSub.Position = pos + H.Vec2(P+4 + titleW + 14, TH/2 - 6)
-            dSub.Visible  = isVis; dSub.Transparency = alpha
+            dSub.Visible  = isVis
         else dSub.Visible = false end
 
         local cPos = pos + H.Vec2(sz.X - btn.X - P, TH/2 - btn.Y/2)
         clsR.pos = cPos
-        dCls.Position=cPos; dCls.Size=btn; dCls.Visible=isVis; dCls.Transparency = alpha
-        dCX1.From=cPos+H.Vec2(4,4);       dCX1.To=cPos+H.Vec2(btn.X-4,btn.Y-4); dCX1.Visible=isVis; dCX1.Transparency = alpha
-        dCX2.From=cPos+H.Vec2(btn.X-4,4); dCX2.To=cPos+H.Vec2(4,btn.Y-4);       dCX2.Visible=isVis; dCX2.Transparency = alpha
+        dCls.Position=cPos; dCls.Size=btn; dCls.Visible=isVis
+        dCX1.From=cPos+H.Vec2(4,4);       dCX1.To=cPos+H.Vec2(btn.X-4,btn.Y-4); dCX1.Visible=isVis
+        dCX2.From=cPos+H.Vec2(btn.X-4,4); dCX2.To=cPos+H.Vec2(4,btn.Y-4);       dCX2.Visible=isVis
 
         local mPos = pos + H.Vec2(sz.X - btn.X*2 - P*2, TH/2 - btn.Y/2)
         minR.pos = mPos
-        dMin.Position=mPos; dMin.Size=btn; dMin.Visible=isVis; dMin.Transparency = alpha
-        dMinL.From=mPos+H.Vec2(4,btn.Y/2); dMinL.To=mPos+H.Vec2(btn.X-4,btn.Y/2); dMinL.Visible=isVis; dMinL.Transparency = alpha
+        dMin.Position=mPos; dMin.Size=btn; dMin.Visible=isVis
+        dMinL.From=mPos+H.Vec2(4,btn.Y/2); dMinL.To=mPos+H.Vec2(btn.X-4,btn.Y/2); dMinL.Visible=isVis
 
-        dSep.From=pos+H.Vec2(0,TH); dSep.To=pos+H.Vec2(sz.X,TH); dSep.Visible=isVis; dSep.Transparency = alpha
+        dSep.From=pos+H.Vec2(0,TH); dSep.To=pos+H.Vec2(sz.X,TH); dSep.Visible=isVis
 
         -- Player card — anchored to animated bottom of window
         local plrH = 52
@@ -294,25 +290,25 @@ function UI:Window(opts)
         dPlrBg.Position = pos + H.Vec2(0, totalH - plrH)
         dPlrBg.Size     = H.Vec2(SB, plrH)
         dPlrBg.Corner   = CR
-        dPlrBg.Visible  = vis; dPlrBg.Transparency = alpha
+        dPlrBg.Visible  = vis
         dPlrBgFix.Position = pos + H.Vec2(0, totalH - plrH)
         dPlrBgFix.Size     = H.Vec2(SB, CR * 2)
-        dPlrBgFix.Visible  = vis; dPlrBgFix.Transparency = alpha
+        dPlrBgFix.Visible  = vis
         dPlrBgFixBR.Position = pos + H.Vec2(SB - CR * 2, totalH - CR * 2)
         dPlrBgFixBR.Size     = H.Vec2(CR * 2, CR * 2)
-        dPlrBgFixBR.Visible  = vis; dPlrBgFixBR.Transparency = alpha
+        dPlrBgFixBR.Visible  = vis
 
         local iconSize = 30
         local iconX = pos.X + P
         local iconY = plrY + plrH/2 - iconSize/2
         dPlrIcon.Position = H.Vec2(iconX, iconY); dPlrIcon.Size = H.Vec2(iconSize, iconSize)
-        dPlrIcon.Visible  = vis; dPlrIcon.Transparency = alpha
+        dPlrIcon.Visible  = vis
         dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6)
-        dPlrInitial.Visible  = vis; dPlrInitial.Transparency = alpha
+        dPlrInitial.Visible  = vis
         dPlrName.Position = H.Vec2(iconX + iconSize + 6, iconY + 4)
-        dPlrName.Visible  = vis; dPlrName.Transparency = alpha
+        dPlrName.Visible  = vis
         dPlrDisp.Position = H.Vec2(iconX + iconSize + 6, iconY + 18)
-        dPlrDisp.Visible  = vis; dPlrDisp.Transparency = alpha
+        dPlrDisp.Visible  = vis
 
         -- FIX: Tabs — draw them below topbar inside the sidebar area
         -- tabs start at TH + P (below topbar separator), each tab is 32px tall
@@ -423,13 +419,13 @@ function UI:Window(opts)
             dCsbTrack.Position = H.Vec2(trackX, clipTop)
             dCsbTrack.Size     = H.Vec2(SB_W, availH)
             dCsbTrack.Visible  = true
-            dCsbTrack.Transparency = _openProg < 0.99 and (1 - _openProg) or 0
+            
             local thumbH = math.max(20, math.floor(availH * (availH / totalH)))
             local thumbY = clipTop + math.floor((availH - thumbH) * (T._scroll / maxScroll))
             dCsbThumb.Position = H.Vec2(trackX, thumbY)
             dCsbThumb.Size     = H.Vec2(SB_W, thumbH)
             dCsbThumb.Visible  = true
-            dCsbThumb.Transparency = _openProg < 0.99 and (1 - _openProg) or 0
+            
         else
             dCsbTrack.Visible = false
             dCsbThumb.Visible = false
@@ -574,18 +570,17 @@ function UI:Window(opts)
             local ia  = W._activeTab == T
             local bp  = wp + H.Vec2(P/2, tabY)
             local bs  = H.Vec2(SB - P, 28)
-            local a   = 1 - _openProg
             T._rect.pos  = bp
             T._rect.size = bs
             dB.Position = bp; dB.Size = bs
             dB.Color    = ia and Theme.TabActive or Theme.Sidebar
-            dB.Corner   = CR; dB.Visible = vis; dB.Transparency = a
+            dB.Corner   = CR; dB.Visible = vis
             dT.Position = bp + H.Vec2(16, (bs.Y - Theme.FontSize) / 2)
             dT.Color    = ia and Theme.Text or Theme.SubText
-            dT.Visible  = vis; dT.Transparency = a
+            dT.Visible  = vis
             dI.Position = bp + H.Vec2(4, (bs.Y - 12) / 2)
             dI.Size     = H.Vec2(3, 12)
-            dI.Visible  = vis and ia; dI.Transparency = a
+            dI.Visible  = vis and ia
         end
 
         T._click = function()
