@@ -248,8 +248,6 @@ function UI:Window(opts)
         local totalH   = TH + bodyH
         local vis      = isVis and _minProg > 0.01  -- content visible only when body has height
 
-        end
-
         local btn = H.Vec2(18,18)
 
         dBg.Position  = pos
