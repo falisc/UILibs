@@ -320,6 +320,10 @@ function UI:Window(opts)
 
     local dPlrName = H.Txt(13,13) ; dPlrName.Color = Theme.Text    ; W._drawings.plrName = dPlrName
     local dPlrDisp = H.Txt(13,10) ; dPlrDisp.Color = Theme.SubText ; W._drawings.plrDisp = dPlrDisp
+    -- Spoof button: small square on right side of player card, no text
+    local dPlrSpoof = H.Sq(13,true,CR) ; dPlrSpoof.Color = Theme.MinimizeBtn ; W._drawings.plrSpoof = dPlrSpoof
+    local _plrSpoofed = false
+    local _plrSpoofRect = {pos=H.Vec2(0,0), size=H.Vec2(18,18)}
 
     dPlrName.Text    = _dispName
     dPlrDisp.Text    = "@".._userName
@@ -410,6 +414,25 @@ function UI:Window(opts)
         dPlrIcon.Visible  = vis; f(dPlrIcon)
         dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6)
         dPlrInitial.Visible  = vis; ft(dPlrInitial)
+
+        -- Spoof button: right side of player card
+        local spoofBtnW = 18; local spoofBtnH = 18
+        local spoofBtnX = pos.X + SB - spoofBtnW - P
+        local spoofBtnY = plrY + plrH/2 - spoofBtnH/2
+        _plrSpoofRect.pos  = H.Vec2(spoofBtnX, spoofBtnY)
+        _plrSpoofRect.size = H.Vec2(spoofBtnW, spoofBtnH)
+        dPlrSpoof.Position = H.Vec2(spoofBtnX, spoofBtnY)
+        dPlrSpoof.Size     = H.Vec2(spoofBtnW, spoofBtnH)
+        dPlrSpoof.Color    = _plrSpoofed and Theme.Accent or Theme.MinimizeBtn
+        dPlrSpoof.Visible  = vis; f(dPlrSpoof)
+
+        -- Update names based on spoof state
+        local shownName = _plrSpoofed and "spoofed" or _dispName
+        local shownDisp = _plrSpoofed and "@spoofed" or ("@".._userName)
+        dPlrName.Text = shownName
+        dPlrDisp.Text = shownDisp
+        dPlrInitial.Text = string.upper(string.sub(shownName, 1, 1))
+
         dPlrName.Position = H.Vec2(iconX + iconSize + 6, iconY + 4)
         dPlrName.Visible  = vis; ft(dPlrName)
         dPlrDisp.Position = H.Vec2(iconX + iconSize + 6, iconY + 18)
@@ -672,6 +695,9 @@ function UI:Window(opts)
         if Input.m1Down then
             if H.InRect(clsR.pos, clsR.size) then W._open = false; return end
             if H.InRect(minR.pos, minR.size) then W._minimized = not W._minimized; return end
+            if dPlrSpoof.Visible and H.InRect(_plrSpoofRect.pos, _plrSpoofRect.size) then
+                _plrSpoofed = not _plrSpoofed; return
+            end
 
             if dCsbTrack.Visible and H.InRect(H.Vec2(W._csbTrackX, W._csbTrackY), H.Vec2(10, W._csbTrackH)) then
                 W._csbDrag = true
@@ -805,7 +831,7 @@ function UI:Window(opts)
 
         local function mkSec(so)
             so = so or {}
-            local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil, _collapsed=false }
+            local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil, _collapsed=so.Collapsed == true }
 
             local dBs = H.Sq(14)      ; dBs.Color = Theme.Section       ; S._drawings.bs = dBs
             local dHd = H.Sq(15)      ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd
