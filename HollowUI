@@ -50,28 +50,129 @@ local Players     = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Mouse       = LocalPlayer:GetMouse()
 
-local Theme = {
+local Themes = {}
+
+-- Discord: blurple-based dark theme
+Themes.Discord = {
     Background    = Color3.fromRGB(18, 18, 20),
     Sidebar       = Color3.fromRGB(23, 23, 26),
     TopBar        = Color3.fromRGB(23, 23, 26),
     Section       = Color3.fromRGB(28, 28, 32),
     SectionHeader = Color3.fromRGB(35, 35, 40),
-    Accent        = Color3.fromRGB(180, 40, 55),
+    Accent        = Color3.fromRGB(100, 100, 220),
     TabActive     = Color3.fromRGB(38, 38, 48),
     Text          = Color3.fromRGB(240, 240, 240),
     SubText       = Color3.fromRGB(160, 160, 170),
     ToggleOff     = Color3.fromRGB(60, 60, 70),
-    ToggleOn      = Color3.fromRGB(180, 40, 55),
-    SliderFill    = Color3.fromRGB(180, 40, 55),
+    ToggleOn      = Color3.fromRGB(100, 100, 220),
+    SliderFill    = Color3.fromRGB(100, 100, 220),
     SliderBg      = Color3.fromRGB(45, 45, 55),
     Border        = Color3.fromRGB(45, 45, 55),
-    CloseBtn      = Color3.fromRGB(180, 40, 55),
+    CloseBtn      = Color3.fromRGB(100, 100, 220),
     MinimizeBtn   = Color3.fromRGB(60, 60, 70),
     Corner        = 6,
     Padding       = 8,
     FontSize      = 14,
-    TitleSize     = 18,  -- FIX: bumped up title size
+    TitleSize     = 18,
 }
+
+-- Crimson: deep red & black
+Themes.Crimson = {
+    Background    = Color3.fromRGB(10, 8, 8),
+    Sidebar       = Color3.fromRGB(16, 10, 10),
+    TopBar        = Color3.fromRGB(16, 10, 10),
+    Section       = Color3.fromRGB(22, 14, 14),
+    SectionHeader = Color3.fromRGB(30, 16, 16),
+    Accent        = Color3.fromRGB(180, 30, 45),
+    TabActive     = Color3.fromRGB(32, 18, 18),
+    Text          = Color3.fromRGB(240, 220, 220),
+    SubText       = Color3.fromRGB(160, 130, 130),
+    ToggleOff     = Color3.fromRGB(55, 35, 35),
+    ToggleOn      = Color3.fromRGB(180, 30, 45),
+    SliderFill    = Color3.fromRGB(180, 30, 45),
+    SliderBg      = Color3.fromRGB(40, 22, 22),
+    Border        = Color3.fromRGB(50, 25, 25),
+    CloseBtn      = Color3.fromRGB(180, 30, 45),
+    MinimizeBtn   = Color3.fromRGB(55, 35, 35),
+    Corner        = 6,
+    Padding       = 8,
+    FontSize      = 14,
+    TitleSize     = 18,
+}
+
+-- Midnight: deep navy blue
+Themes.Midnight = {
+    Background    = Color3.fromRGB(8, 10, 18),
+    Sidebar       = Color3.fromRGB(10, 13, 24),
+    TopBar        = Color3.fromRGB(10, 13, 24),
+    Section       = Color3.fromRGB(14, 18, 32),
+    SectionHeader = Color3.fromRGB(18, 24, 42),
+    Accent        = Color3.fromRGB(60, 130, 255),
+    TabActive     = Color3.fromRGB(18, 24, 40),
+    Text          = Color3.fromRGB(220, 230, 255),
+    SubText       = Color3.fromRGB(130, 150, 200),
+    ToggleOff     = Color3.fromRGB(35, 45, 75),
+    ToggleOn      = Color3.fromRGB(60, 130, 255),
+    SliderFill    = Color3.fromRGB(60, 130, 255),
+    SliderBg      = Color3.fromRGB(25, 32, 58),
+    Border        = Color3.fromRGB(30, 40, 70),
+    CloseBtn      = Color3.fromRGB(60, 130, 255),
+    MinimizeBtn   = Color3.fromRGB(35, 45, 75),
+    Corner        = 6,
+    Padding       = 8,
+    FontSize      = 14,
+    TitleSize     = 18,
+}
+
+-- Forest: deep green
+Themes.Forest = {
+    Background    = Color3.fromRGB(8, 14, 10),
+    Sidebar       = Color3.fromRGB(10, 18, 12),
+    TopBar        = Color3.fromRGB(10, 18, 12),
+    Section       = Color3.fromRGB(12, 22, 15),
+    SectionHeader = Color3.fromRGB(16, 28, 18),
+    Accent        = Color3.fromRGB(50, 180, 80),
+    TabActive     = Color3.fromRGB(14, 26, 17),
+    Text          = Color3.fromRGB(210, 240, 215),
+    SubText       = Color3.fromRGB(120, 165, 130),
+    ToggleOff     = Color3.fromRGB(30, 55, 35),
+    ToggleOn      = Color3.fromRGB(50, 180, 80),
+    SliderFill    = Color3.fromRGB(50, 180, 80),
+    SliderBg      = Color3.fromRGB(18, 40, 22),
+    Border        = Color3.fromRGB(22, 48, 28),
+    CloseBtn      = Color3.fromRGB(50, 180, 80),
+    MinimizeBtn   = Color3.fromRGB(30, 55, 35),
+    Corner        = 6,
+    Padding       = 8,
+    FontSize      = 14,
+    TitleSize     = 18,
+}
+
+-- Ash: clean light grey
+Themes.Ash = {
+    Background    = Color3.fromRGB(28, 28, 30),
+    Sidebar       = Color3.fromRGB(36, 36, 38),
+    TopBar        = Color3.fromRGB(36, 36, 38),
+    Section       = Color3.fromRGB(44, 44, 46),
+    SectionHeader = Color3.fromRGB(52, 52, 54),
+    Accent        = Color3.fromRGB(180, 180, 190),
+    TabActive     = Color3.fromRGB(50, 50, 54),
+    Text          = Color3.fromRGB(245, 245, 248),
+    SubText       = Color3.fromRGB(165, 165, 170),
+    ToggleOff     = Color3.fromRGB(80, 80, 85),
+    ToggleOn      = Color3.fromRGB(180, 180, 190),
+    SliderFill    = Color3.fromRGB(180, 180, 190),
+    SliderBg      = Color3.fromRGB(62, 62, 66),
+    Border        = Color3.fromRGB(65, 65, 70),
+    CloseBtn      = Color3.fromRGB(180, 180, 190),
+    MinimizeBtn   = Color3.fromRGB(80, 80, 85),
+    Corner        = 6,
+    Padding       = 8,
+    FontSize      = 14,
+    TitleSize     = 18,
+}
+
+local Theme = Themes.Discord  -- default
 
 local H = {}
 function H.Vec2(x, y) return Vector2.new(x, y) end
@@ -103,17 +204,6 @@ function H.Circ(z)
     local c = Drawing.new("Circle")
     c.Filled = true; c.ZIndex = z or 0; c.Visible = false
     return c
-end
--- Returns true if a drawing at Y position py with height ph is at least partially inside [clipTop, clipBottom]
-function H.InClip(py, ph, ct, cb)
-    if not ct or not cb then return true end
-    return (py + ph) > ct and py < cb
-end
--- Text clip: hide text that bleeds below cb or is fully above ct
--- Bottom is enforced strictly (no bleed), top allows partial visibility
-function H.TxtClip(py, fs, ct, cb)
-    if not ct or not cb then return true end
-    return (py + fs) <= cb and (py + fs) > ct
 end
 function H.KeyName(key)
     if not key then return "NONE" end
@@ -180,11 +270,11 @@ function UI:Window(opts)
     W._tabs       = {}
     W._activeTab  = nil
     W._drawings   = {}
+    -- Apply theme
+    if opts.Theme and Themes[opts.Theme] then Theme = Themes[opts.Theme] end
     W._tracked    = { W.Key, 0x1B }
-
-    -- Animation progress values (0=hidden/minimized, 1=shown/full)
-    local _openProg = 1  -- starts open
-    local _minProg  = 1  -- starts unminimized
+    local _openProg = 0
+    local _minProg  = 1
 
     local SB    = 180
     local TH    = 46
@@ -202,19 +292,19 @@ function UI:Window(opts)
     local dTtl  = H.Txt(13,Theme.TitleSize) ; dTtl.Color=Theme.Text    ; dTtl.Text=W.Title    ; W._drawings.ttl=dTtl
     local dSub  = H.Txt(13,13)              ; dSub.Color=Theme.SubText ; dSub.Text=W.Subtitle ; W._drawings.sub=dSub
     local dCls  = H.Sq(13,true,CR)  ; dCls.Color = Theme.CloseBtn   ; W._drawings.cls  = dCls
-    local dCX1  = H.Ln(14,2)        ; dCX1.Color = Theme.Text        ; W._drawings.cx1  = dCX1
-    local dCX2  = H.Ln(14,2)        ; dCX2.Color = Theme.Text        ; W._drawings.cx2  = dCX2
+    local dCX1  = H.Ln(14,2)       ; dCX1.Color = Theme.Text        ; W._drawings.cx1  = dCX1
+    local dCX2  = H.Ln(14,2)       ; dCX2.Color = Theme.Text        ; W._drawings.cx2  = dCX2
     local dMin  = H.Sq(13,true,CR)  ; dMin.Color = Theme.MinimizeBtn ; W._drawings.min  = dMin
-    local dMinL = H.Ln(14,2)        ; dMinL.Color= Theme.Text        ; W._drawings.minL = dMinL
-    local dSep  = H.Ln(12,1)        ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep
+    local dMinL = H.Ln(14,2)       ; dMinL.Color= Theme.Text        ; W._drawings.minL = dMinL
+    local dSep  = H.Ln(12,1)       ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep
 
     -- FIX: player card — bottom overlay square to round only bottom-left corner
     -- We draw: a rounded full card bg, then a square on top-right to cancel that corner rounding
     local dPlrBg      = H.Sq(12,true,CR) ; dPlrBg.Color = Theme.TabActive ; W._drawings.plrBg      = dPlrBg
     local dPlrBgFix   = H.Sq(12,true,0)  ; dPlrBgFix.Color = Theme.TabActive ; W._drawings.plrBgFix   = dPlrBgFix
     local dPlrBgFixBR = H.Sq(12,true,0)  ; dPlrBgFixBR.Color = Theme.TabActive ; W._drawings.plrBgFixBR = dPlrBgFixBR
-    local dPlrIcon    = H.Sq(13,true,CR) ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon
-    local dPlrInitial = H.Txt(14,12)     ; dPlrInitial.Color = Theme.Text   ; W._drawings.plrInitial = dPlrInitial
+    local dPlrIcon    = H.Sq(13,true,CR)  ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon
+    local dPlrInitial = H.Txt(14,12)                ; dPlrInitial.Color = Theme.Text   ; W._drawings.plrInitial = dPlrInitial
 
     -- DisplayName: use pcall since Matcha's external model may not expose it
     local _userName = tostring(LocalPlayer.Name)
@@ -238,82 +328,81 @@ function UI:Window(opts)
         local pos  = W._pos
         local sz   = W.Size
 
-        -- Lerp animation progress values
-        _openProg = _openProg + ((W._open and 1 or 0) - _openProg) * 0.12
-        _minProg  = _minProg  + ((W._minimized and 0 or 1) - _minProg)  * 0.12
+        -- Lerp open/minimize progress
+        _openProg = _openProg + ((W._open and 1 or 0) - _openProg) * 0.08
+        _minProg  = _minProg  + ((W._minimized and 0 or 1) - _minProg) * 0.1
 
-        -- Derived values from animation
-        local isVis    = _openProg > 0.01
-        local bodyH    = (sz.Y - TH) * _minProg -- animated body height
-        local totalH   = TH + bodyH
-        local vis      = isVis and _minProg > 0.01  -- content visible only when body has height
+        -- Fade: Transparency=1 opaque, Transparency=0 invisible in Matcha
+        local fade   = _openProg          -- 0=invisible, 1=fully opaque
+        local isVis  = _openProg > 0.01
+        -- Minimize animates body height only, show/hide fades
+        local bodyH  = (sz.Y - TH) * _minProg
+        local totalH = TH + bodyH
+        local vis    = isVis and _minProg > 0.01
+        local btn    = H.Vec2(18,18)
 
-        local btn = H.Vec2(18,18)
+        -- Helper: set fade on a drawing
+        local function f(d) if d.Visible then d.Transparency = fade end end
 
         dBg.Position  = pos
         dBg.Size      = H.Vec2(sz.X, totalH)
         dBg.Corner    = CR
-        dBg.Visible   = isVis
+        dBg.Visible   = isVis; f(dBg)
 
-        dTop.Position = pos; dTop.Size = H.Vec2(sz.X, TH); dTop.Corner = CR; dTop.Visible = isVis
-        dTopF.Position= pos + H.Vec2(0,TH/2); dTopF.Size = H.Vec2(sz.X,TH/2); dTopF.Visible = isVis
+        dTop.Position = pos; dTop.Size = H.Vec2(sz.X, TH); dTop.Corner = CR; dTop.Visible = isVis; f(dTop)
+        dTopF.Position= pos + H.Vec2(0,TH/2); dTopF.Size = H.Vec2(sz.X,TH/2); dTopF.Visible = isVis; f(dTopF)
 
-        dSide.Position = pos + H.Vec2(0,TH); dSide.Size = H.Vec2(SB, bodyH); dSide.Corner = CR; dSide.Visible = vis
-        dSideTop.Position = pos + H.Vec2(0,TH); dSideTop.Size = H.Vec2(SB, CR*2); dSideTop.Visible = vis
-        dSideB.Position= pos + H.Vec2(SB,TH); dSideB.Size= H.Vec2(1,bodyH); dSideB.Visible= vis
+        dSide.Position = pos + H.Vec2(0,TH); dSide.Size = H.Vec2(SB, bodyH); dSide.Corner = CR; dSide.Visible = vis; f(dSide)
+        dSideTop.Position = pos + H.Vec2(0,TH); dSideTop.Size = H.Vec2(SB, CR*2); dSideTop.Visible = vis; f(dSideTop)
+        dSideB.Position= pos + H.Vec2(SB,TH); dSideB.Size= H.Vec2(1,bodyH); dSideB.Visible= vis; f(dSideB)
 
-        dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = isVis
+        dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = isVis; f(dTtl)
         if W.Subtitle ~= "" then
             local titleW = #W.Title * Theme.TitleSize * 0.42
             dSub.Position = pos + H.Vec2(P+4 + titleW + 14, TH/2 - 6)
-            dSub.Visible  = isVis
+            dSub.Visible  = isVis; f(dSub)
         else dSub.Visible = false end
 
         local cPos = pos + H.Vec2(sz.X - btn.X - P, TH/2 - btn.Y/2)
         clsR.pos = cPos
-        dCls.Position=cPos; dCls.Size=btn; dCls.Visible=isVis
-        dCX1.From=cPos+H.Vec2(4,4);       dCX1.To=cPos+H.Vec2(btn.X-4,btn.Y-4); dCX1.Visible=isVis
-        dCX2.From=cPos+H.Vec2(btn.X-4,4); dCX2.To=cPos+H.Vec2(4,btn.Y-4);       dCX2.Visible=isVis
+        dCls.Position=cPos; dCls.Size=btn; dCls.Visible=isVis; f(dCls)
+        dCX1.From=cPos+H.Vec2(4,4);       dCX1.To=cPos+H.Vec2(btn.X-4,btn.Y-4); dCX1.Visible=isVis; f(dCX1)
+        dCX2.From=cPos+H.Vec2(btn.X-4,4); dCX2.To=cPos+H.Vec2(4,btn.Y-4);       dCX2.Visible=isVis; f(dCX2)
 
         local mPos = pos + H.Vec2(sz.X - btn.X*2 - P*2, TH/2 - btn.Y/2)
         minR.pos = mPos
-        dMin.Position=mPos; dMin.Size=btn; dMin.Visible=isVis
-        dMinL.From=mPos+H.Vec2(4,btn.Y/2); dMinL.To=mPos+H.Vec2(btn.X-4,btn.Y/2); dMinL.Visible=isVis
+        dMin.Position=mPos; dMin.Size=btn; dMin.Visible=isVis; f(dMin)
+        dMinL.From=mPos+H.Vec2(4,btn.Y/2); dMinL.To=mPos+H.Vec2(btn.X-4,btn.Y/2); dMinL.Visible=isVis; f(dMinL)
 
-        dSep.From=pos+H.Vec2(0,TH); dSep.To=pos+H.Vec2(sz.X,TH); dSep.Visible=isVis
+        dSep.From=pos+H.Vec2(0,TH); dSep.To=pos+H.Vec2(sz.X,TH); dSep.Visible=isVis; f(dSep)
 
-        -- Player card — anchored to animated bottom of window
         local plrH = 52
         local plrY = pos.Y + totalH - plrH
         dPlrBg.Position = pos + H.Vec2(0, totalH - plrH)
-        dPlrBg.Size     = H.Vec2(SB, plrH)
-        dPlrBg.Corner   = CR
-        dPlrBg.Visible  = vis
+        dPlrBg.Size     = H.Vec2(SB, plrH); dPlrBg.Corner = CR
+        dPlrBg.Visible  = vis; f(dPlrBg)
         dPlrBgFix.Position = pos + H.Vec2(0, totalH - plrH)
         dPlrBgFix.Size     = H.Vec2(SB, CR * 2)
-        dPlrBgFix.Visible  = vis
+        dPlrBgFix.Visible  = vis; f(dPlrBgFix)
         dPlrBgFixBR.Position = pos + H.Vec2(SB - CR * 2, totalH - CR * 2)
         dPlrBgFixBR.Size     = H.Vec2(CR * 2, CR * 2)
-        dPlrBgFixBR.Visible  = vis
+        dPlrBgFixBR.Visible  = vis; f(dPlrBgFixBR)
 
         local iconSize = 30
         local iconX = pos.X + P
         local iconY = plrY + plrH/2 - iconSize/2
         dPlrIcon.Position = H.Vec2(iconX, iconY); dPlrIcon.Size = H.Vec2(iconSize, iconSize)
-        dPlrIcon.Visible  = vis
+        dPlrIcon.Visible  = vis; f(dPlrIcon)
         dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6)
-        dPlrInitial.Visible  = vis
+        dPlrInitial.Visible  = vis; f(dPlrInitial)
         dPlrName.Position = H.Vec2(iconX + iconSize + 6, iconY + 4)
-        dPlrName.Visible  = vis
+        dPlrName.Visible  = vis; f(dPlrName)
         dPlrDisp.Position = H.Vec2(iconX + iconSize + 6, iconY + 18)
-        dPlrDisp.Visible  = vis
+        dPlrDisp.Visible  = vis; f(dPlrDisp)
 
-        -- FIX: Tabs — draw them below topbar inside the sidebar area
-        -- tabs start at TH + P (below topbar separator), each tab is 32px tall
-        -- We need to leave space at the bottom for the player card (plrH + P)
         local tabY = TH + P
         for _, tab in ipairs(W._tabs) do
-            tab._draw(tabY, vis)
+            tab._draw(tabY, vis, fade)
             tabY = tabY + 32
         end
     end
@@ -335,7 +424,7 @@ function UI:Window(opts)
             dCsbTrack.Visible=false; dCsbThumb.Visible=false
             return
         end
-        if _minProg < 0.05 then
+        if _minProg < 0.05 or _openProg < 0.05 then
             for _, tab in ipairs(W._tabs) do
                 for _, s in ipairs(tab._sections) do s._hide() end
             end
@@ -392,10 +481,10 @@ function UI:Window(opts)
             local inView = (sy + row.h) > clipTop and sy < clipBottom
             if inView then
                 if row.s2 then
-                    row.s1._upd(cx,          sy, row.hw, clipTop, clipBottom)
-                    row.s2._upd(cx+row.hw+P, sy, row.hw, clipTop, clipBottom)
+                    row.s1._upd(cx,          sy, row.hw)
+                    row.s2._upd(cx+row.hw+P, sy, row.hw)
                 else
-                    row.s1._upd(cx, sy, cw, clipTop, clipBottom)
+                    row.s1._upd(cx, sy, cw)
                 end
             else
                 row.s1._hide()
@@ -417,13 +506,13 @@ function UI:Window(opts)
             dCsbTrack.Position = H.Vec2(trackX, clipTop)
             dCsbTrack.Size     = H.Vec2(SB_W, availH)
             dCsbTrack.Visible  = true
-            
+            dCsbTrack.Transparency = _openProg
             local thumbH = math.max(20, math.floor(availH * (availH / totalH)))
             local thumbY = clipTop + math.floor((availH - thumbH) * (T._scroll / maxScroll))
             dCsbThumb.Position = H.Vec2(trackX, thumbY)
             dCsbThumb.Size     = H.Vec2(SB_W, thumbH)
             dCsbThumb.Visible  = true
-            
+            dCsbThumb.Transparency = _openProg
         else
             dCsbTrack.Visible = false
             dCsbThumb.Visible = false
@@ -493,7 +582,7 @@ function UI:Window(opts)
         if W._csbDrag and Input.m1 and W._activeTab then
             local T = W._activeTab
             local cy     = W._pos.Y + TH + P
-            local availH = (W.Size.Y - TH) * _minProg - P*2
+            local availH = W.Size.Y - TH - P*2
             -- measure total height same way as _layout
             local totalH = 0
             for _, s in ipairs(T._sections) do totalH = totalH + s._h + P end
@@ -563,22 +652,23 @@ function UI:Window(opts)
         local dT = H.Txt(13,Theme.FontSize)   ; dT.Color = Theme.SubText ; dT.Text = T._title ; T._drawings.t = dT
         local dI = H.Sq(13,true,2)            ; dI.Color = Theme.Accent  ; T._drawings.i = dI
 
-        T._draw = function(tabY, vis)
+        T._draw = function(tabY, vis, fade)
             local wp  = W._pos
             local ia  = W._activeTab == T
             local bp  = wp + H.Vec2(P/2, tabY)
             local bs  = H.Vec2(SB - P, 28)
-            T._rect.pos  = bp
-            T._rect.size = bs
+            T._rect.pos  = bp; T._rect.size = bs
             dB.Position = bp; dB.Size = bs
             dB.Color    = ia and Theme.TabActive or Theme.Sidebar
             dB.Corner   = CR; dB.Visible = vis
+            if vis then dB.Transparency = fade end
             dT.Position = bp + H.Vec2(16, (bs.Y - Theme.FontSize) / 2)
             dT.Color    = ia and Theme.Text or Theme.SubText
             dT.Visible  = vis
+            if vis then dT.Transparency = fade end
             dI.Position = bp + H.Vec2(4, (bs.Y - 12) / 2)
-            dI.Size     = H.Vec2(3, 12)
-            dI.Visible  = vis and ia
+            dI.Size     = H.Vec2(3, 12); dI.Visible = vis and ia
+            if vis and ia then dI.Transparency = fade end
         end
 
         T._click = function()
@@ -612,7 +702,7 @@ function UI:Window(opts)
                 S._h = math.max(th, 50)
             end
 
-            S._upd = function(x, y, w, ct, cb)
+            S._upd = function(x, y, w)
                 local HH = S._title ~= "" and 28 or 0
                 local ip = P
                 local th = HH + ip
@@ -620,38 +710,19 @@ function UI:Window(opts)
                 th = th + ip/2
                 S._h = math.max(th, 50)
 
-                -- Clamp the section background to the clip region
-                local sTop    = ct and math.max(y, ct) or y
-                local sBot    = cb and math.min(y + S._h, cb) or (y + S._h)
-                local sH      = math.max(0, sBot - sTop)
-                dBs.Position  = H.Vec2(x, sTop)
-                dBs.Size      = H.Vec2(w, sH)
-                dBs.Corner    = CR
-                dBs.Visible   = sH > 0
+                dBs.Position=H.Vec2(x,y); dBs.Size=H.Vec2(w,S._h); dBs.Corner=CR; dBs.Visible=true
 
                 if S._title ~= "" then
-                    -- Clamp header background
-                    local hTop  = ct and math.max(y, ct) or y
-                    local hBot  = cb and math.min(y + HH, cb) or (y + HH)
-                    local hH    = math.max(0, hBot - hTop)
-                    dHd.Position = H.Vec2(x, hTop); dHd.Size = H.Vec2(w, hH)
-                    dHd.Corner   = CR;     dHd.Visible = hH > 0
-                    -- Lower half fill (square corners on top)
-                    local fTop  = ct and math.max(y + HH/2, ct) or (y + HH/2)
-                    local fBot  = cb and math.min(y + HH, cb) or (y + HH)
-                    local fH    = math.max(0, fBot - fTop)
-                    dHf.Position = H.Vec2(x, fTop); dHf.Size = H.Vec2(w, fH); dHf.Visible = fH > 0
-                    -- Title text — only show if its Y is inside clip
-                    local stY = y + HH/2 - 6
-                    dSt.Position = H.Vec2(x + ip, stY)
-                    dSt.Visible  = H.TxtClip(stY, 12, ct, cb)
+                    dHd.Position=H.Vec2(x,y); dHd.Size=H.Vec2(w,HH); dHd.Corner=CR; dHd.Visible=true
+                    dHf.Position=H.Vec2(x,y+HH/2); dHf.Size=H.Vec2(w,HH/2); dHf.Visible=true
+                    dSt.Position=H.Vec2(x+ip, y+HH/2-6); dSt.Visible=true
                 else
                     dHd.Visible=false; dHf.Visible=false; dSt.Visible=false
                 end
 
                 local wy = y + HH + ip
                 for _, wg in ipairs(S._widgets) do
-                    wg._upd(x+ip, wy, w-ip*2, ct, cb)
+                    wg._upd(x+ip, wy, w-ip*2)
                     wy = wy + wg._h + ip/2
                 end
             end
@@ -674,7 +745,7 @@ function UI:Window(opts)
                 wo = wo or {}
                 local wg = { _drawings={}, _h=22, _text=wo.Title or "" }
                 local d = H.Txt(17) ; d.Color=Theme.SubText ; d.Text=wg._text ; wg._drawings.d=d
-                wg._upd = function(x,y,w,ct,cb) d.Position=H.Vec2(x,y+3); d.Visible=H.TxtClip(y+3, Theme.FontSize, ct, cb) end
+                wg._upd = function(x,y,w) d.Position=H.Vec2(x,y+3); d.Visible=true end
                 wg._click = function() end
                 table.insert(S._widgets, wg)
                 local r={}
@@ -689,15 +760,10 @@ function UI:Window(opts)
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
                 local dA=H.Txt(18); dA.Color=Theme.SubText; dA.Text="»" ; wg._drawings.a=dA
-                wg._upd = function(x,y,w,ct,cb)
-                    local vis = H.InClip(y, wg._h, ct, cb)
-                    local bTop = ct and math.max(y, ct) or y
-                    local bBot = cb and math.min(y+26, cb) or y+26
-                    local bH   = math.max(0, bBot - bTop)
-                    dB.Position=H.Vec2(x,bTop); dB.Size=H.Vec2(w,bH); dB.Visible=vis and bH>0
-                    local tVis = vis and H.TxtClip(y+5, Theme.FontSize, ct, cb)
-                    dT.Position=H.Vec2(x+8,y+5); dT.Visible=tVis
-                    dA.Position=H.Vec2(x+w-18,y+5); dA.Visible=tVis
+                wg._upd = function(x,y,w)
+                    dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,26); dB.Visible=true
+                    dT.Position=H.Vec2(x+8,y+5); dT.Visible=true
+                    dA.Position=H.Vec2(x+w-18,y+5); dA.Visible=true
                 end
                 wg._click = function()
                     if dB.Visible and H.InRect(dB.Position,dB.Size) then cb() end
@@ -712,98 +778,63 @@ function UI:Window(opts)
                 local dT=H.Txt(17); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
                 local dTr=H.Sq(17,true,9) ; wg._drawings.tr=dTr
                 local dK=H.Circ(18); dK.Color=Color3.fromRGB(255,255,255); dK.NumSides=30; dK.Radius=7 ; wg._drawings.k=dK
-
-                -- Inline keybind box (sits between label and toggle track)
                 local dKb=H.Sq(17,true,4); dKb.Color=Theme.TabActive ; wg._drawings.kb=dKb
                 local dKt=H.Txt(18,10);    dKt.Color=Theme.SubText   ; wg._drawings.kt=dKt
-                local _key      = nil   -- no key by default
-                local _changing = false
-                local _changeT  = 0
-
-                -- Progress 0 = OFF (left), 1 = ON (right)
+                local _key=nil; local _changing=false; local _changeT=0
                 local _prog = wg._value and 1 or 0
-
-                local function lerpColor(a, b, t)
-                    return Color3.new(
-                        a.R + (b.R - a.R) * t,
-                        a.G + (b.G - a.G) * t,
-                        a.B + (b.B - a.B) * t
-                    )
+                local function lerpColor(a,b,t)
+                    return Color3.new(a.R+(b.R-a.R)*t,a.G+(b.G-a.G)*t,a.B+(b.B-a.B)*t)
                 end
-
                 wg._upd = function(x,y,w,ct,cb)
-                    local vis = H.InClip(y, wg._h, ct, cb)
+                    local vis=H.InClip(y,wg._h,ct,cb)
                     local tw=36; local th=18
-                    -- keybind box sits just left of the toggle track
-                    local kbW = 36; local kbH = 18
-                    local kbX = x+w - tw - kbW - 6
-                    local kbY = y+6
-                    local tx  = x+w-tw; local ty=y+6
-                    local tTop = ct and math.max(ty, ct) or ty
-                    local tBot = cb and math.min(ty+th, cb) or ty+th
-                    local tH   = math.max(0, tBot - tTop)
-
-                    -- Keybind box clamped to clip
-                    local kbTop = ct and math.max(kbY, ct) or kbY
-                    local kbBot = cb and math.min(kbY+kbH, cb) or kbY+kbH
-                    local kbH2  = math.max(0, kbBot - kbTop)
-                    local kbVis = vis and kbH2 > 0
-                    dKb.Position=H.Vec2(kbX, kbTop); dKb.Size=H.Vec2(kbW, kbH2)
-                    dKb.Color = _changing and Theme.Accent or Theme.TabActive
+                    local kbW=36; local kbH=18
+                    local kbX=x+w-tw-kbW-6; local kbY=y+6
+                    local tx=x+w-tw; local ty=y+6
+                    local tTop=ct and math.max(ty,ct) or ty
+                    local tBot=cb and math.min(ty+th,cb) or ty+th
+                    local tH=math.max(0,tBot-tTop)
+                    local kbTop=ct and math.max(kbY,ct) or kbY
+                    local kbBot=cb and math.min(kbY+kbH,cb) or kbY+kbH
+                    local kbH2=math.max(0,kbBot-kbTop)
+                    local kbVis=vis and kbH2>0
+                    dKb.Position=H.Vec2(kbX,kbTop); dKb.Size=H.Vec2(kbW,kbH2)
+                    dKb.Color=_changing and Theme.Accent or Theme.TabActive
                     dKb.Corner=4; dKb.Visible=kbVis
-                    local ks = _changing and "..." or (_key and H.KeyName(_key) or "—")
-                    dKt.Text=ks
-                    dKt.Position=H.Vec2(kbX+4, kbY+3)
-                    dKt.Visible=kbVis and H.TxtClip(kbY+3, 10, ct, cb)
-
-                    -- Lerp progress toward target
-                    local targetProg = wg._value and 1 or 0
-                    _prog = _prog + (targetProg - _prog) * 0.04
-
-                    local kxLeft  = tx + 1
-                    local kxRight = tx + tw - th + 1
-                    local kxAnim  = kxLeft + (kxRight - kxLeft) * _prog
-                    local colAnim = lerpColor(Theme.ToggleOff, Theme.ToggleOn, _prog)
-                    local ky = ty + th/2
-
-                    dT.Position=H.Vec2(x,y+7); dT.Visible=vis and H.TxtClip(y+7, Theme.FontSize, ct, cb)
+                    local ks=_changing and "..." or (_key and H.KeyName(_key) or "-")
+                    dKt.Text=ks; dKt.Position=H.Vec2(kbX+4,kbY+3)
+                    dKt.Visible=kbVis and H.TxtClip(kbY+3,10,ct,cb)
+                    local targetProg=wg._value and 1 or 0
+                    _prog=_prog+(targetProg-_prog)*0.04
+                    local kxLeft=tx+1; local kxRight=tx+tw-th+1
+                    local kxAnim=kxLeft+(kxRight-kxLeft)*_prog
+                    local colAnim=lerpColor(Theme.ToggleOff,Theme.ToggleOn,_prog)
+                    local ky=ty+th/2
+                    dT.Position=H.Vec2(x,y+7); dT.Visible=vis and H.TxtClip(y+7,Theme.FontSize,ct,cb)
                     dTr.Position=H.Vec2(tx,tTop); dTr.Size=H.Vec2(tw,tH)
                     dTr.Color=colAnim; dTr.Corner=9; dTr.Visible=vis and tH>0
-                    dK.Position=H.Vec2(kxAnim + th/2 - 1, ky)
-                    dK.Visible=vis and H.TxtClip(ky-7, 14, ct, cb)
+                    dK.Position=H.Vec2(kxAnim+th/2-1,ky)
+                    dK.Visible=vis and H.TxtClip(ky-7,14,ct,cb)
                 end
                 wg._click = function()
-                    -- Toggle track click
                     if dTr.Visible and H.InRect(dTr.Position,dTr.Size) then
-                        wg._value = not wg._value; cb(wg._value)
+                        wg._value=not wg._value; cb(wg._value)
                     end
-                    -- Keybind box click — start capturing
                     if dKb.Visible and H.InRect(dKb.Position,dKb.Size) and not _changing then
-                        _changing = true; _changeT = os.clock()
+                        _changing=true; _changeT=os.clock()
                     end
                 end
                 wg._poll = function()
-                    -- Fire toggle via key (keysDown = only on press, not held)
                     if _key and Input.keysDown[_key] then
-                        wg._value = not wg._value; cb(wg._value)
+                        wg._value=not wg._value; cb(wg._value)
                     end
-                    -- Capture new key
                     if _changing then
-                        if (os.clock() - _changeT) < 0.15 then return end
-                        if iskeypressed(0x1B) then
-                            -- ESC clears the key
-                            _changing = false; _key = nil; return
-                        end
-                        for _, k in ipairs(ALL_KEYS) do
+                        if (os.clock()-_changeT)<0.15 then return end
+                        if iskeypressed(0x1B) then _changing=false; _key=nil; return end
+                        for _,k in ipairs(ALL_KEYS) do
                             if iskeypressed(k) then
-                                if _key then
-                                    -- remove old key from tracked if no other widget uses it
-                                    -- (simple: just leave it, polling a silent key is harmless)
-                                end
-                                _key = k
-                                table.insert(W._tracked, k)
-                                _changing = false; _changeT = os.clock()
-                                return
+                                _key=k; table.insert(W._tracked,k)
+                                _changing=false; _changeT=os.clock(); return
                             end
                         end
                     end
@@ -836,20 +867,15 @@ function UI:Window(opts)
                     return tonumber(string.format(fmt, math.clamp(st, wg._min, wg._max)))
                 end
 
-                wg._upd = function(x,y,w,ct,cb)
-                    local vis = H.InClip(y, wg._h, ct, cb)
+                wg._upd = function(x,y,w)
+                    dTt.Position=H.Vec2(x,y+2); dTt.Visible=true
                     local ty=y+22
-                    -- Clamp slider track
-                    local sTop = ct and math.max(ty, ct) or ty
-                    local sBot = cb and math.min(ty+12, cb) or ty+12
-                    local sH   = math.max(0, sBot - sTop)
-                    dTt.Position=H.Vec2(x,y+2); dTt.Visible=vis and H.TxtClip(y+2, Theme.FontSize, ct, cb)
                     wg._tp=H.Vec2(x,ty); wg._ts=H.Vec2(w,12)
-                    dTr.Position=H.Vec2(x,sTop); dTr.Size=H.Vec2(w,sH); dTr.Visible=vis and sH>0
+                    dTr.Position=H.Vec2(x,ty); dTr.Size=H.Vec2(w,12); dTr.Visible=true
                     local pct=math.clamp((wg._value-wg._min)/(wg._max-wg._min),0,1)
-                    dFl.Position=H.Vec2(x,sTop); dFl.Size=H.Vec2(math.max(w*pct,8),sH); dFl.Visible=vis and sH>0
+                    dFl.Position=H.Vec2(x,ty); dFl.Size=H.Vec2(math.max(w*pct,8),12); dFl.Visible=true
                     local vt=tostring(wg._value)..wg._suffix
-                    dVl.Text=vt; dVl.Position=H.Vec2(x+w/2-#vt*3.5,sTop); dVl.Visible=vis and sH>0
+                    dVl.Text=vt; dVl.Position=H.Vec2(x+w/2-#vt*3.5,ty); dVl.Visible=true
                 end
                 wg._click = function()
                     if dTr.Visible and H.InRect(wg._tp,wg._ts) then
@@ -891,20 +917,14 @@ function UI:Window(opts)
                     table.insert(od,{b=ob,t=ot})
                     table.insert(wg._xd,ob); table.insert(wg._xd,ot)
                 end
-                wg._upd = function(x,y,w,ct,cb)
+                wg._upd = function(x,y,w)
                     local ns = #wg._options > MAX_ROWS
                     local visible = math.min(#wg._options, MAX_ROWS)
                     local rowW = ns and (w - SB_W - 2) or w
                     wg._h = wg._open and (32 + visible*26 + 4) or 32
-                    -- Clamp header bar
-                    local bTop = ct and math.max(y, ct) or y
-                    local bBot = cb and math.min(y+28, cb) or y+28
-                    local bH   = math.max(0, bBot - bTop)
-                    local vis  = bH > 0
-                    dB.Position=H.Vec2(x,bTop); dB.Size=H.Vec2(w,bH); dB.Visible=vis
-                    local txtVis = vis and H.TxtClip(y+7, Theme.FontSize, ct, cb)
-                    dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=txtVis
-                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=txtVis
+                    dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=true
+                    dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=true
+                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=true
 
                     local listY = y + 30
                     local listH = visible * 26
@@ -914,14 +934,9 @@ function UI:Window(opts)
                         local o=od[i]; local opt=wg._options[i+wg._scroll]
                         if wg._open and opt then
                             local oy = listY + (i-1)*26
-                            local oTop = ct and math.max(oy, ct) or oy
-                            local oBot = cb and math.min(oy+25, cb) or oy+25
-                            local oH   = math.max(0, oBot - oTop)
-                            local ovis = oH > 0
-                            o.b.Position=H.Vec2(x,oTop); o.b.Size=H.Vec2(rowW,oH)
-                            o.b.Color=(opt==wg._value) and Theme.Accent or Theme.Section; o.b.Visible=ovis
-                            local otVis = ovis and H.TxtClip(oy+5, Theme.FontSize, ct, cb)
-                            o.t.Text=opt; o.t.Position=H.Vec2(x+8,oy+5); o.t.Visible=otVis
+                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,25)
+                            o.b.Color=(opt==wg._value) and Theme.Accent or Theme.Section; o.b.Visible=true
+                            o.t.Text=opt; o.t.Position=H.Vec2(x+8,oy+5); o.t.Visible=true
                         else o.b.Visible=false; o.t.Visible=false end
                     end
 
@@ -929,18 +944,13 @@ function UI:Window(opts)
                         local trackX = x + rowW + 2
                         local trackH = listH
                         wg._trackX=trackX; wg._trackY=listY; wg._trackH=trackH
-                        local sbTop = ct and math.max(listY, ct) or listY
-                        local sbBot = cb and math.min(listY+trackH, cb) or listY+trackH
-                        local sbH   = math.max(0, sbBot - sbTop)
-                        dSbTrack.Position=H.Vec2(trackX, sbTop); dSbTrack.Size=H.Vec2(SB_W, sbH); dSbTrack.Visible=sbH>0
+                        dSbTrack.Position=H.Vec2(trackX, listY); dSbTrack.Size=H.Vec2(SB_W, trackH); dSbTrack.Visible=true
+                        -- thumb size proportional to visible/total, position based on scroll
                         local total = #wg._options
                         local thumbH = math.max(16, math.floor(trackH * (MAX_ROWS / total)))
                         local maxScroll = total - MAX_ROWS
                         local thumbY = listY + math.floor((trackH - thumbH) * (wg._scroll / maxScroll))
-                        local tTop = ct and math.max(thumbY, ct) or thumbY
-                        local tBot = cb and math.min(thumbY+thumbH, cb) or thumbY+thumbH
-                        local tH   = math.max(0, tBot - tTop)
-                        dSbThumb.Position=H.Vec2(trackX, tTop); dSbThumb.Size=H.Vec2(SB_W, tH); dSbThumb.Visible=tH>0
+                        dSbThumb.Position=H.Vec2(trackX, thumbY); dSbThumb.Size=H.Vec2(SB_W, thumbH); dSbThumb.Visible=true
                     else
                         dSbTrack.Visible=false; dSbThumb.Visible=false
                     end
@@ -1003,7 +1013,7 @@ function UI:Window(opts)
                     table.insert(od,{b=ob,t=ot,c=oc})
                     table.insert(wg._xd,ob); table.insert(wg._xd,ot); table.insert(wg._xd,oc)
                 end
-                wg._upd = function(x,y,w,ct,cb)
+                wg._upd = function(x,y,w)
                     local ns = #wg._options > MAX_ROWS
                     local visible = math.min(#wg._options, MAX_ROWS)
                     local rowW = ns and (w - SB_W - 2) or w
@@ -1011,14 +1021,9 @@ function UI:Window(opts)
                     local st=#wg._value>0 and table.concat(wg._value,", ") or "None"
                     local maxChars = math.floor((rowW-60)/7)
                     if #st > maxChars then st = string.sub(st,1,maxChars-2)..".." end
-                    local bTop = ct and math.max(y, ct) or y
-                    local bBot = cb and math.min(y+28, cb) or y+28
-                    local bH   = math.max(0, bBot - bTop)
-                    local vis  = bH > 0
-                    dB.Position=H.Vec2(x,bTop); dB.Size=H.Vec2(w,bH); dB.Visible=vis
-                    local txtVis = vis and H.TxtClip(y+7, Theme.FontSize, ct, cb)
-                    dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=txtVis
-                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=txtVis
+                    dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=true
+                    dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=true
+                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=true
 
                     local listY = y + 30
                     local listH = visible * 26
@@ -1029,16 +1034,11 @@ function UI:Window(opts)
                         local sel=opt and table.find(wg._value,opt)
                         if wg._open and opt then
                             local oy = listY + (i-1)*26
-                            local oTop = ct and math.max(oy, ct) or oy
-                            local oBot = cb and math.min(oy+25, cb) or oy+25
-                            local oH   = math.max(0, oBot - oTop)
-                            local ovis = oH > 0
-                            o.b.Position=H.Vec2(x,oTop); o.b.Size=H.Vec2(rowW,oH)
-                            o.b.Color=sel and Theme.Accent or Theme.Section; o.b.Visible=ovis
-                            local otVis = ovis and H.TxtClip(oy+5, Theme.FontSize, ct, cb)
-                            o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=otVis
+                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,25)
+                            o.b.Color=sel and Theme.Accent or Theme.Section; o.b.Visible=true
+                            o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=true
                             o.c.Position=H.Vec2(x+6,oy+5); o.c.Size=H.Vec2(14,14)
-                            o.c.Color=sel and Theme.Accent or Theme.SliderBg; o.c.Corner=3; o.c.Visible=otVis
+                            o.c.Color=sel and Theme.Accent or Theme.SliderBg; o.c.Corner=3; o.c.Visible=true
                         else o.b.Visible=false; o.t.Visible=false; o.c.Visible=false end
                     end
 
@@ -1046,18 +1046,12 @@ function UI:Window(opts)
                         local trackX = x + rowW + 2
                         local trackH = listH
                         wg._trackX=trackX; wg._trackY=listY; wg._trackH=trackH
-                        local sbTop = ct and math.max(listY, ct) or listY
-                        local sbBot = cb and math.min(listY+trackH, cb) or listY+trackH
-                        local sbH   = math.max(0, sbBot - sbTop)
-                        dSbTrack.Position=H.Vec2(trackX,sbTop); dSbTrack.Size=H.Vec2(SB_W,sbH); dSbTrack.Visible=sbH>0
+                        dSbTrack.Position=H.Vec2(trackX,listY); dSbTrack.Size=H.Vec2(SB_W,trackH); dSbTrack.Visible=true
                         local total = #wg._options
                         local thumbH = math.max(16, math.floor(trackH * (MAX_ROWS / total)))
                         local maxScroll = total - MAX_ROWS
                         local thumbY = listY + math.floor((trackH - thumbH) * (wg._scroll / maxScroll))
-                        local tTop = ct and math.max(thumbY, ct) or thumbY
-                        local tBot = cb and math.min(thumbY+thumbH, cb) or thumbY+thumbH
-                        local tH   = math.max(0, tBot - tTop)
-                        dSbThumb.Position=H.Vec2(trackX,tTop); dSbThumb.Size=H.Vec2(SB_W,tH); dSbThumb.Visible=tH>0
+                        dSbThumb.Position=H.Vec2(trackX,thumbY); dSbThumb.Size=H.Vec2(SB_W,thumbH); dSbThumb.Visible=true
                     else
                         dSbTrack.Visible=false; dSbThumb.Visible=false
                     end
@@ -1110,13 +1104,12 @@ function UI:Window(opts)
                 local dKb=H.Sq(17,true,4); dKb.Color=Theme.TabActive ; wg._drawings.kb=dKb
                 local dKt=H.Txt(18,11); dKt.Color=Theme.Text ; wg._drawings.kt=dKt
                 if wg._key then table.insert(W._tracked, wg._key) end
-                wg._upd = function(x,y,w,ct,cb)
-                    local vis = H.InClip(y, wg._h, ct, cb)
-                    dTt.Position=H.Vec2(x,y+7); dTt.Visible=vis and H.TxtClip(y+7, Theme.FontSize, ct, cb)
+                wg._upd = function(x,y,w)
+                    dTt.Position=H.Vec2(x,y+7); dTt.Visible=true
                     local ks=wg._changing and "..." or H.KeyName(wg._key)
                     local kw=math.max(44,#ks*8+12)
-                    dKb.Position=H.Vec2(x+w-kw,y+3); dKb.Size=H.Vec2(kw,22); dKb.Visible=vis and H.TxtClip(y+3, 22, ct, cb)
-                    dKt.Text=ks; dKt.Position=H.Vec2(x+w-kw+5,y+8); dKt.Visible=vis and H.TxtClip(y+8, 11, ct, cb)
+                    dKb.Position=H.Vec2(x+w-kw,y+3); dKb.Size=H.Vec2(kw,22); dKb.Visible=true
+                    dKt.Text=ks; dKt.Position=H.Vec2(x+w-kw+5,y+8); dKt.Visible=true
                 end
                 wg._click = function()
                     if dKb.Visible and H.InRect(dKb.Position,dKb.Size) then
