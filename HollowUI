@@ -561,6 +561,7 @@ function UI:Window(opts)
             end
         end
 
+        -- Only run widget polls (toggle keybind binding, slider drag, etc) while open
         for _, tab in ipairs(W._tabs) do
             for _, s in ipairs(tab._sections) do
                 for _, w in ipairs(s._widgets) do
@@ -570,10 +571,23 @@ function UI:Window(opts)
         end
     end
 
+    -- Keybind onPress actions fire regardless of window open state
+    -- This runs every frame outside _input so window key can't interfere
+    W._pollActions = function()
+        for _, tab in ipairs(W._tabs) do
+            for _, s in ipairs(tab._sections) do
+                for _, w in ipairs(s._widgets) do
+                    if w._pollAction then w._pollAction() end
+                end
+            end
+        end
+    end
+
     spawn(function()
         while W._running do
             local ok, err = pcall(function()
                 Input.Poll(W._tracked)
+                W._pollActions()
                 W._input()
                 W._draw()
                 W._layout()
@@ -808,9 +822,6 @@ function UI:Window(opts)
                     end
                 end
                 wg._poll = function()
-                    if _key and Input.keysDown[_key] then
-                        wg._value = not wg._value; cb(wg._value)
-                    end
                     if _changing then
                         if (os.clock() - _changeT) < 0.15 then return end
                         if iskeypressed(0x1B) then _changing = false; _key = nil; return end
@@ -820,6 +831,11 @@ function UI:Window(opts)
                                 _changing = false; _changeT = os.clock(); return
                             end
                         end
+                    end
+                end
+                wg._pollAction = function()
+                    if _key and Input.keysDown[_key] then
+                        wg._value = not wg._value; cb(wg._value)
                     end
                 end
                 table.insert(S._widgets, wg)
@@ -1091,8 +1107,11 @@ function UI:Window(opts)
                                 table.insert(W._tracked, k); onChanged(k); return
                             end
                         end
-                    else
-                        if wg._key and Input.keysDown[wg._key] then onPress() end
+                    end
+                end
+                wg._pollAction = function()
+                    if not wg._changing and wg._key and Input.keysDown[wg._key] then
+                        onPress()
                     end
                 end
                 table.insert(S._widgets, wg)
