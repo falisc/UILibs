@@ -310,6 +310,13 @@ function UI:Window(opts)
 
     local dPlrName = H.Txt(13,13) ; dPlrName.Color = Theme.Text    ; W._drawings.plrName = dPlrName
     local dPlrDisp = H.Txt(13,10) ; dPlrDisp.Color = Theme.SubText ; W._drawings.plrDisp = dPlrDisp
+    local dSpoof   = H.Sq(13,true,4) ; dSpoof.Color = Theme.Border ; W._drawings.spoof = dSpoof
+    local dSpoofDot1 = H.Sq(14,true,1) ; dSpoofDot1.Color = Theme.SubText ; W._drawings.sd1 = dSpoofDot1
+    local dSpoofDot2 = H.Sq(14,true,1) ; dSpoofDot2.Color = Theme.SubText ; W._drawings.sd2 = dSpoofDot2
+    local dSpoofDot3 = H.Sq(14,true,1) ; dSpoofDot3.Color = Theme.SubText ; W._drawings.sd3 = dSpoofDot3
+
+    local _spoofed = false
+    local _spoofRect = { pos=H.Vec2(0,0), size=H.Vec2(20,20) }
 
     dPlrName.Text    = _dispName
     dPlrDisp.Text    = "@".._userName
@@ -354,7 +361,7 @@ function UI:Window(opts)
         dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); fa(dTtl)
         if W.Subtitle ~= "" then
             local titleW = #W.Title * Theme.TitleSize * 0.42
-            dSub.Position = pos + H.Vec2(P+4 + titleW + 14, TH/2 - 6)
+            dSub.Position = pos + H.Vec2(P+4 + titleW + 22, TH/2 - Theme.TitleSize/2 + Theme.TitleSize - 13)
             fa(dSub)
         else dSub.Visible = false end
 
@@ -384,6 +391,27 @@ function UI:Window(opts)
         dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6); fv(dPlrInitial)
         dPlrName.Position = H.Vec2(iconX + iconSize + 6, iconY + 4); fv(dPlrName)
         dPlrDisp.Position = H.Vec2(iconX + iconSize + 6, iconY + 18); fv(dPlrDisp)
+        -- spoof button: small square in bottom-right of player card
+        local sbSize = 18
+        local sbX = pos.X + SB - sbSize - 5
+        local sbY = plrY + plrH/2 - sbSize/2
+        _spoofRect.pos  = H.Vec2(sbX, sbY)
+        _spoofRect.size = H.Vec2(sbSize, sbSize)
+        local spoofHover = vis and H.InRect(H.Vec2(sbX, sbY), H.Vec2(sbSize, sbSize))
+        dSpoof.Position = H.Vec2(sbX, sbY); dSpoof.Size = H.Vec2(sbSize, sbSize)
+        dSpoof.Color    = _spoofed and Theme.Accent or (spoofHover and Theme.SectionHeader or Theme.Border)
+        dSpoof.Visible  = vis; if vis then dSpoof.Transparency = alpha end
+        -- three dots centered in the button
+        local dotS = 3; local dotGap = 5
+        local dotStartX = sbX + sbSize/2 - dotS - dotGap
+        local dotY = sbY + sbSize/2 - dotS/2
+        dSpoofDot1.Position = H.Vec2(dotStartX, dotY);           dSpoofDot1.Size = H.Vec2(dotS, dotS)
+        dSpoofDot2.Position = H.Vec2(dotStartX + dotGap, dotY);  dSpoofDot2.Size = H.Vec2(dotS, dotS)
+        dSpoofDot3.Position = H.Vec2(dotStartX + dotGap*2, dotY); dSpoofDot3.Size = H.Vec2(dotS, dotS)
+        local dotCol = _spoofed and Theme.Text or Theme.SubText
+        dSpoofDot1.Color = dotCol; dSpoofDot2.Color = dotCol; dSpoofDot3.Color = dotCol
+        dSpoofDot1.Visible = vis; dSpoofDot2.Visible = vis; dSpoofDot3.Visible = vis
+        if vis then dSpoofDot1.Transparency = alpha; dSpoofDot2.Transparency = alpha; dSpoofDot3.Transparency = alpha end
 
         local tabY = TH + P
         for _, tab in ipairs(W._tabs) do
@@ -515,6 +543,21 @@ function UI:Window(opts)
         if Input.m1Down then
             if H.InRect(clsR.pos, clsR.size) then W._open = false; return end
             if H.InRect(minR.pos, minR.size) then W._minimized = not W._minimized; return end
+
+            -- spoof button click
+            if dSpoof.Visible and H.InRect(_spoofRect.pos, _spoofRect.size) then
+                _spoofed = not _spoofed
+                if _spoofed then
+                    dPlrName.Text    = "spoofed"
+                    dPlrDisp.Text    = "@spoofed"
+                    dPlrInitial.Text = "S"
+                else
+                    dPlrName.Text    = _dispName
+                    dPlrDisp.Text    = "@".._userName
+                    dPlrInitial.Text = string.upper(string.sub(_dispName, 1, 1))
+                end
+                return
+            end
 
             if dCsbTrack.Visible and H.InRect(H.Vec2(W._csbTrackX, W._csbTrackY), H.Vec2(10, W._csbTrackH)) then
                 W._csbDrag = true; return
