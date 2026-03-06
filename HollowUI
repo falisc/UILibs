@@ -674,7 +674,7 @@ function UI:Window(opts)
             dT.Position = bp + H.Vec2(16, (bs.Y - 16) / 2)
             dT.Color    = ia and Theme.Text or Theme.SubText
             dT.Visible  = vis
-            if vis then dT.Transparency = fade end
+            
             dI.Position = bp + H.Vec2(4, (bs.Y - 14) / 2)
             dI.Size     = H.Vec2(3, 14); dI.Visible = vis and ia
             if vis and ia then dI.Transparency = fade end
@@ -736,7 +736,7 @@ function UI:Window(opts)
                     dHf.Position=H.Vec2(x,y+HH/2); dHf.Size=H.Vec2(w,HH/2); dHf.Visible=H.InClip(y+HH/2,HH/2,ct,cbot)
                     if dHf.Visible then dHf.Transparency=_openProg end
                     dSt.Position=H.Vec2(x+ip,y+HH/2-6); dSt.Visible=H.TxtClip(y+HH/2-6,Theme.FontSize,ct,cbot)
-                    if dSt.Visible then dSt.Transparency=_openProg end
+                    
                 else
                     dHd.Visible=false; dHf.Visible=false; dSt.Visible=false
                 end
