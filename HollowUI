@@ -345,7 +345,7 @@ function UI:Window(opts)
     local dPlrDisp = H.Txt(13,10) ; dPlrDisp.Color = Theme.SubText ; W._drawings.plrDisp = dPlrDisp
 
     local dSpoofBtn = H.Sq(13,true,4) ; dSpoofBtn.Color = Theme.MinimizeBtn ; W._drawings.spoofBtn = dSpoofBtn
-    local dSpoofTxt = H.Txt(14,9)     ; dSpoofTxt.Color = Theme.SubText     ; dSpoofTxt.Text = "S" ; W._drawings.spoofTxt = dSpoofTxt
+    local dSpoofTxt = H.Txt(14,10)    ; dSpoofTxt.Color = Theme.Text        ; dSpoofTxt.Text = "~" ; W._drawings.spoofTxt = dSpoofTxt
     local spoofR = {pos=H.Vec2(0,0), size=H.Vec2(20,20)}
 
     dPlrName.Text    = _dispName
@@ -359,9 +359,8 @@ function UI:Window(opts)
         local pos  = W._pos
         local sz   = W.Size
 
-        -- Lerp open/minimize progress
-        _openProg = _openProg + ((W._open and 1 or 0) - _openProg) * 0.07
-        _minProg  = _minProg  + ((W._minimized and 0 or 1) - _minProg) * 0.1
+        _openProg = _openProg + ((W._open and 1 or 0) - _openProg) * 0.012
+        _minProg  = _minProg  + ((W._minimized and 0 or 1) - _minProg) * 0.025
 
         -- Fade: Transparency=1 opaque, Transparency=0 invisible in Matcha
         local fade   = _openProg          -- 0=invisible, 1=fully opaque
@@ -830,7 +829,7 @@ function UI:Window(opts)
                 local wg = { _drawings={}, _h=30, _title=wo.Title or "Button" }
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
-                local dA=H.Txt(18); dA.Color=Theme.SubText; dA.Text="»" ; wg._drawings.a=dA
+                local dA=H.Txt(18); dA.Color=Theme.SubText; dA.Text=">" ; wg._drawings.a=dA
                 wg._upd = function(x,y,w,ct,cbot)
                     local vis=H.InClip(y,26,ct,cbot)
                     local bTop=ct and math.max(y,ct) or y
