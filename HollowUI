@@ -361,7 +361,7 @@ function UI:Window(opts)
         dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); fa(dTtl)
         if W.Subtitle ~= "" then
             local titleW = #W.Title * Theme.TitleSize * 0.42
-            dSub.Position = pos + H.Vec2(P+4 + titleW + 22, TH/2 - Theme.TitleSize/2 + Theme.TitleSize - 13)
+            dSub.Position = pos + H.Vec2(P+4 + titleW + 22, TH/2 - Theme.TitleSize/2)
             fa(dSub)
         else dSub.Visible = false end
 
