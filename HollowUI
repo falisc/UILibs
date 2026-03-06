@@ -148,30 +148,6 @@ Themes.Forest = {
     TitleSize     = 18,
 }
 
--- Crimson: deep red
-Themes.Crimson = {
-    Background    = Color3.fromRGB(18, 8, 10),
-    Sidebar       = Color3.fromRGB(24, 10, 12),
-    TopBar        = Color3.fromRGB(24, 10, 12),
-    Section       = Color3.fromRGB(32, 12, 15),
-    SectionHeader = Color3.fromRGB(42, 16, 18),
-    Accent        = Color3.fromRGB(220, 50, 60),
-    TabActive     = Color3.fromRGB(40, 14, 17),
-    Text          = Color3.fromRGB(255, 220, 225),
-    SubText       = Color3.fromRGB(200, 130, 140),
-    ToggleOff     = Color3.fromRGB(75, 30, 35),
-    ToggleOn      = Color3.fromRGB(220, 50, 60),
-    SliderFill    = Color3.fromRGB(220, 50, 60),
-    SliderBg      = Color3.fromRGB(58, 20, 24),
-    Border        = Color3.fromRGB(70, 25, 30),
-    CloseBtn      = Color3.fromRGB(220, 50, 60),
-    MinimizeBtn   = Color3.fromRGB(75, 30, 35),
-    Corner        = 6,
-    Padding       = 8,
-    FontSize      = 14,
-    TitleSize     = 18,
-}
-
 -- Ash: clean light grey
 Themes.Ash = {
     Background    = Color3.fromRGB(28, 28, 30),
@@ -609,14 +585,6 @@ function UI:Window(opts)
             W._open = not W._open
         end
 
-        for _, tab in ipairs(W._tabs) do
-            for _, s in ipairs(tab._sections) do
-                for _, w in ipairs(s._widgets) do
-                    if w._poll then w._poll() end
-                end
-            end
-        end
-
         if not W._open then return end
 
         if Input.m1Down then
@@ -685,6 +653,14 @@ function UI:Window(opts)
             for _, s in ipairs(W._activeTab._sections) do
                 for _, w in ipairs(s._widgets) do
                     if w._held then w._held() end
+                end
+            end
+        end
+
+        for _, tab in ipairs(W._tabs) do
+            for _, s in ipairs(tab._sections) do
+                for _, w in ipairs(s._widgets) do
+                    if w._poll then w._poll() end
                 end
             end
         end
@@ -1292,6 +1268,3 @@ function UI:Window(opts)
 
     return W
 end
-
-getgenv().UI = UI
-return UI
