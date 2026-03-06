@@ -689,7 +689,17 @@ function UI:Window(opts)
             W._open = not W._open
         end
 
-        if not W._open then return end
+        if not W._open then
+            -- still poll keybinds even when hidden
+            for _, tab in ipairs(W._tabs) do
+                for _, s in ipairs(tab._sections) do
+                    for _, w in ipairs(s._widgets) do
+                        if w._poll then w._poll() end
+                    end
+                end
+            end
+            return
+        end
 
         if Input.m1Down then
             if H.InRect(clsR.pos, clsR.size) then W._open = false; return end
