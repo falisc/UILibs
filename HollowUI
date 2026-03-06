@@ -351,6 +351,7 @@ function UI:Window(opts)
 
         -- Helper: set fade on a drawing
         local function f(d) if d.Visible then d.Transparency = fade end end
+        local function ft(d) if d.Visible then d.Transparency = 1 end end
 
         dBg.Position  = pos
         dBg.Size      = H.Vec2(sz.X, totalH)
@@ -364,11 +365,11 @@ function UI:Window(opts)
         dSideTop.Position = pos + H.Vec2(0,TH); dSideTop.Size = H.Vec2(SB, CR*2); dSideTop.Visible = vis; f(dSideTop)
         dSideB.Position= pos + H.Vec2(SB,TH); dSideB.Size= H.Vec2(1,bodyH); dSideB.Visible= vis; f(dSideB)
 
-        dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = isVis; f(dTtl)
+        dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = isVis; ft(dTtl)
         if W.Subtitle ~= "" then
             local titleW = #W.Title * Theme.TitleSize * 0.42
-            dSub.Position = pos + H.Vec2(P+4 + titleW + 14, TH/2 - 6)
-            dSub.Visible  = isVis; f(dSub)
+            dSub.Position = pos + H.Vec2(P+4 + titleW + 25, TH/2 - 6)
+            dSub.Visible  = isVis; ft(dSub)
         else dSub.Visible = false end
 
         local cPos = pos + H.Vec2(sz.X - btn.X - P, TH/2 - btn.Y/2)
@@ -402,11 +403,11 @@ function UI:Window(opts)
         dPlrIcon.Position = H.Vec2(iconX, iconY); dPlrIcon.Size = H.Vec2(iconSize, iconSize)
         dPlrIcon.Visible  = vis; f(dPlrIcon)
         dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6)
-        dPlrInitial.Visible  = vis; f(dPlrInitial)
+        dPlrInitial.Visible  = vis; ft(dPlrInitial)
         dPlrName.Position = H.Vec2(iconX + iconSize + 6, iconY + 4)
-        dPlrName.Visible  = vis; f(dPlrName)
+        dPlrName.Visible  = vis; ft(dPlrName)
         dPlrDisp.Position = H.Vec2(iconX + iconSize + 6, iconY + 18)
-        dPlrDisp.Visible  = vis; f(dPlrDisp)
+        dPlrDisp.Visible  = vis; ft(dPlrDisp)
 
         local tabY = TH + P
         for _, tab in ipairs(W._tabs) do
@@ -514,13 +515,13 @@ function UI:Window(opts)
             dCsbTrack.Position = H.Vec2(trackX, clipTop)
             dCsbTrack.Size     = H.Vec2(SB_W, availH)
             dCsbTrack.Visible  = true
-            dCsbTrack.Transparency = (1-_openProg)
+            dCsbTrack.Transparency = _openProg
             local thumbH = math.max(20, math.floor(availH * (availH / totalH)))
             local thumbY = clipTop + math.floor((availH - thumbH) * (T._scroll / maxScroll))
             dCsbThumb.Position = H.Vec2(trackX, thumbY)
             dCsbThumb.Size     = H.Vec2(SB_W, thumbH)
             dCsbThumb.Visible  = true
-            dCsbThumb.Transparency = (1-_openProg)
+            dCsbThumb.Transparency = _openProg
         else
             dCsbTrack.Visible = false
             dCsbThumb.Visible = false
@@ -724,18 +725,18 @@ function UI:Window(opts)
                 local sH   = math.max(0, sBot - sTop)
                 dBs.Position=H.Vec2(x,sTop); dBs.Size=H.Vec2(w,sH); dBs.Corner=CR
                 dBs.Visible=sH>0
-                if dBs.Visible then dBs.Transparency=(1-_openProg) end
+                if dBs.Visible then dBs.Transparency=_openProg end
 
                 if S._title ~= "" then
                     local hdTop = ct and math.max(y,ct) or y
                     local hdBot = cbot and math.min(y+HH,cbot) or y+HH
                     local hdH = math.max(0,hdBot-hdTop)
                     dHd.Position=H.Vec2(x,hdTop); dHd.Size=H.Vec2(w,hdH); dHd.Corner=CR; dHd.Visible=hdH>0
-                    if dHd.Visible then dHd.Transparency=(1-_openProg) end
+                    if dHd.Visible then dHd.Transparency=_openProg end
                     dHf.Position=H.Vec2(x,y+HH/2); dHf.Size=H.Vec2(w,HH/2); dHf.Visible=H.InClip(y+HH/2,HH/2,ct,cbot)
-                    if dHf.Visible then dHf.Transparency=(1-_openProg) end
+                    if dHf.Visible then dHf.Transparency=_openProg end
                     dSt.Position=H.Vec2(x+ip,y+HH/2-6); dSt.Visible=H.TxtClip(y+HH/2-6,Theme.FontSize,ct,cbot)
-                    if dSt.Visible then dSt.Transparency=(1-_openProg) end
+                    if dSt.Visible then dSt.Transparency=_openProg end
                 else
                     dHd.Visible=false; dHf.Visible=false; dSt.Visible=false
                 end
@@ -768,7 +769,7 @@ function UI:Window(opts)
                 wg._upd = function(x,y,w,ct,cb2)
                     local vis=H.TxtClip(y+3,Theme.FontSize,ct,cb2)
                     d.Position=H.Vec2(x,y+3); d.Visible=vis
-                    if vis then d.Transparency=(1-_openProg) end
+                    if vis then d.Transparency=_openProg end
                 end
                 wg._click = function() end
                 table.insert(S._widgets, wg)
@@ -790,12 +791,12 @@ function UI:Window(opts)
                     local bBot=cbot and math.min(y+26,cbot) or y+26
                     local bH=math.max(0,bBot-bTop)
                     dB.Position=H.Vec2(x,bTop); dB.Size=H.Vec2(w,bH); dB.Visible=bH>0
-                    if dB.Visible then dB.Transparency=(1-_openProg) end
+                    if dB.Visible then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+5,Theme.FontSize,ct,cbot)
                     dT.Position=H.Vec2(x+8,y+5); dT.Visible=tv
-                    if tv then dT.Transparency=(1-_openProg) end
+                    
                     dA.Position=H.Vec2(x+w-18,y+5); dA.Visible=tv
-                    if tv then dA.Transparency=(1-_openProg) end
+                    
                 end
                 wg._click = function()
                     if dB.Visible and H.InRect(dB.Position,dB.Size) then cb() end
@@ -902,18 +903,18 @@ function UI:Window(opts)
                 wg._upd = function(x,y,w,ct,cbot)
                     local tv=H.TxtClip(y+2,Theme.FontSize,ct,cbot)
                     dTt.Position=H.Vec2(x,y+2); dTt.Visible=tv
-                    if tv then dTt.Transparency=(1-_openProg) end
+                    
                     local ty=y+22
                     wg._tp=H.Vec2(x,ty); wg._ts=H.Vec2(w,12)
                     local trv=H.InClip(ty,12,ct,cbot)
                     dTr.Position=H.Vec2(x,ty); dTr.Size=H.Vec2(w,12); dTr.Visible=trv
-                    if trv then dTr.Transparency=(1-_openProg) end
+                    if trv then dTr.Transparency=_openProg end
                     local pct=math.clamp((wg._value-wg._min)/(wg._max-wg._min),0,1)
                     dFl.Position=H.Vec2(x,ty); dFl.Size=H.Vec2(math.max(w*pct,8),12); dFl.Visible=trv
-                    if trv then dFl.Transparency=(1-_openProg) end
+                    if trv then dFl.Transparency=_openProg end
                     local vt=tostring(wg._value)..wg._suffix
                     dVl.Text=vt; dVl.Position=H.Vec2(x+w/2-#vt*3.5,ty); dVl.Visible=trv
-                    if trv then dVl.Transparency=(1-_openProg) end
+                    
                 end
                 wg._click = function()
                     if dTr.Visible and H.InRect(wg._tp,wg._ts) then
@@ -962,12 +963,12 @@ function UI:Window(opts)
                     wg._h = wg._open and (32 + visible*26 + 4) or 32
                     local bv=H.InClip(y,28,ct,cb2)
                     dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=bv
-                    if bv then dB.Transparency=(1-_openProg) end
+                    if bv then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cb2)
                     dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=tv
-                    if tv then dT.Transparency=(1-_openProg) end
+                    
                     dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=tv
-                    if tv then dA.Transparency=(1-_openProg) end
+                    
 
                     local listY = y + 30
                     local listH = visible * 26
@@ -980,10 +981,10 @@ function UI:Window(opts)
                             local ov=H.InClip(oy,25,ct,cb2)
                             o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,25)
                             o.b.Color=(opt==wg._value) and Theme.Accent or Theme.Section; o.b.Visible=ov
-                            if ov then o.b.Transparency=(1-_openProg) end
+                            if ov then o.b.Transparency=_openProg end
                             local otv=H.TxtClip(oy+5,Theme.FontSize,ct,cb2)
                             o.t.Text=opt; o.t.Position=H.Vec2(x+8,oy+5); o.t.Visible=otv
-                            if otv then o.t.Transparency=(1-_openProg) end
+                            
                         else o.b.Visible=false; o.t.Visible=false end
                     end
 
@@ -992,13 +993,13 @@ function UI:Window(opts)
                         local trackH = listH
                         wg._trackX=trackX; wg._trackY=listY; wg._trackH=trackH
                         dSbTrack.Position=H.Vec2(trackX, listY); dSbTrack.Size=H.Vec2(SB_W, trackH); dSbTrack.Visible=true
-                        dSbTrack.Transparency=(1-_openProg)
+                        dSbTrack.Transparency=_openProg
                         local total = #wg._options
                         local thumbH = math.max(16, math.floor(trackH * (MAX_ROWS / total)))
                         local maxScroll = total - MAX_ROWS
                         local thumbY = listY + math.floor((trackH - thumbH) * (wg._scroll / maxScroll))
                         dSbThumb.Position=H.Vec2(trackX, thumbY); dSbThumb.Size=H.Vec2(SB_W, thumbH); dSbThumb.Visible=true
-                        dSbThumb.Transparency=(1-_openProg)
+                        dSbThumb.Transparency=_openProg
                     else
                         dSbTrack.Visible=false; dSbThumb.Visible=false
                     end
@@ -1071,12 +1072,12 @@ function UI:Window(opts)
                     if #st > maxChars then st = string.sub(st,1,maxChars-2)..".." end
                     local bv=H.InClip(y,28,ct,cb2)
                     dB.Position=H.Vec2(x,y); dB.Size=H.Vec2(w,28); dB.Visible=bv
-                    if bv then dB.Transparency=(1-_openProg) end
+                    if bv then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cb2)
                     dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=tv
-                    if tv then dT.Transparency=(1-_openProg) end
+                    
                     dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=tv
-                    if tv then dA.Transparency=(1-_openProg) end
+                    
 
                     local listY = y + 30
                     local listH = visible * 26
@@ -1090,13 +1091,13 @@ function UI:Window(opts)
                             local ov=H.InClip(oy,25,ct,cb2)
                             o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,25)
                             o.b.Color=sel and Theme.Accent or Theme.Section; o.b.Visible=ov
-                            if ov then o.b.Transparency=(1-_openProg) end
+                            if ov then o.b.Transparency=_openProg end
                             local otv=H.TxtClip(oy+5,Theme.FontSize,ct,cb2)
                             o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=otv
-                            if otv then o.t.Transparency=(1-_openProg) end
+                            
                             o.c.Position=H.Vec2(x+6,oy+5); o.c.Size=H.Vec2(14,14)
                             o.c.Color=sel and Theme.Accent or Theme.SliderBg; o.c.Corner=3; o.c.Visible=ov
-                            if ov then o.c.Transparency=(1-_openProg) end
+                            if ov then o.c.Transparency=_openProg end
                         else o.b.Visible=false; o.t.Visible=false; o.c.Visible=false end
                     end
 
@@ -1105,13 +1106,13 @@ function UI:Window(opts)
                         local trackH = listH
                         wg._trackX=trackX; wg._trackY=listY; wg._trackH=trackH
                         dSbTrack.Position=H.Vec2(trackX,listY); dSbTrack.Size=H.Vec2(SB_W,trackH); dSbTrack.Visible=true
-                        dSbTrack.Transparency=(1-_openProg)
+                        dSbTrack.Transparency=_openProg
                         local total = #wg._options
                         local thumbH = math.max(16, math.floor(trackH * (MAX_ROWS / total)))
                         local maxScroll = total - MAX_ROWS
                         local thumbY = listY + math.floor((trackH - thumbH) * (wg._scroll / maxScroll))
                         dSbThumb.Position=H.Vec2(trackX,thumbY); dSbThumb.Size=H.Vec2(SB_W,thumbH); dSbThumb.Visible=true
-                        dSbThumb.Transparency=(1-_openProg)
+                        dSbThumb.Transparency=_openProg
                     else
                         dSbTrack.Visible=false; dSbThumb.Visible=false
                     end
@@ -1167,14 +1168,14 @@ function UI:Window(opts)
                 wg._upd = function(x,y,w,ct,cbot)
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cbot)
                     dTt.Position=H.Vec2(x,y+7); dTt.Visible=tv
-                    if tv then dTt.Transparency=(1-_openProg) end
+                    
                     local ks=wg._changing and "..." or H.KeyName(wg._key)
                     local kw=math.max(44,#ks*8+12)
                     local kv=H.InClip(y+3,22,ct,cbot)
                     dKb.Position=H.Vec2(x+w-kw,y+3); dKb.Size=H.Vec2(kw,22); dKb.Visible=kv
-                    if kv then dKb.Transparency=(1-_openProg) end
+                    if kv then dKb.Transparency=_openProg end
                     dKt.Text=ks; dKt.Position=H.Vec2(x+w-kw+5,y+8); dKt.Visible=kv
-                    if kv then dKt.Transparency=(1-_openProg) end
+                    
                 end
                 wg._click = function()
                     if dKb.Visible and H.InRect(dKb.Position,dKb.Size) then
