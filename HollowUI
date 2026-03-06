@@ -700,7 +700,7 @@ function UI:Window(opts)
 
         local function mkSec(so)
             so = so or {}
-            local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil, _collapsed=false, _collapseProg=1 }
+            local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil, _collapsed=so.Collapsed==true, _collapseProg=so.Collapsed==true and 0 or 1 }
 
             local dBs  = H.Sq(14)        ; dBs.Color  = Theme.Section       ; S._drawings.bs  = dBs
             local dHd  = H.Sq(15)        ; dHd.Color  = Theme.SectionHeader ; S._drawings.hd  = dHd
