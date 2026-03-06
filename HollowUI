@@ -984,7 +984,8 @@ function UI:Window(opts)
                 local dK=H.Circ(18); dK.Color=Color3.fromRGB(255,255,255); dK.NumSides=30; dK.Radius=7 ; wg._drawings.k=dK
                 local dKb=H.Sq(17,true,4); dKb.Color=Theme.TabActive ; wg._drawings.kb=dKb
                 local dKt=H.Txt(18,10);    dKt.Color=Theme.SubText   ; wg._drawings.kt=dKt
-                local _key=nil; local _changing=false; local _changeT=0
+                local _key=wo.Key or nil; local _changing=false; local _changeT=0
+                if _key then table.insert(W._tracked, _key) end
                 local _prog = wg._value and 1 or 0
                 local function lerpColor(a,b,t)
                     return Color3.new(a.R+(b.R-a.R)*t,a.G+(b.G-a.G)*t,a.B+(b.B-a.B)*t)
