@@ -367,14 +367,11 @@ function UI:Window(opts)
         dTtl.Position = H.Vec2(titleX, titleY)
         dTtl.Visible  = isVis; ft(dTtl)
 
-        -- Subtitle: snug right of title, baseline matched to title center
+        -- Subtitle: snug right of title with small gap
         if W.Subtitle ~= "" then
-            local titleCharW = Theme.TitleSize * 0.58
+            local titleCharW = Theme.TitleSize * 0.52
             local titleTextW = #W.Title * titleCharW
-            local subX = titleX + titleTextW + 5
-            -- both title and subtitle share the same vertical midpoint: pos.Y + TH/2
-            -- title is TitleSize(18) tall, subtitle is 12px tall
-            -- center both: titleY = TH/2 - 9, subY = TH/2 - 6
+            local subX = titleX + titleTextW + 4
             local subY = pos.Y + TH/2 - 6
             dSub.Position = H.Vec2(subX, subY)
             dSub.Visible  = isVis; ft(dSub)
