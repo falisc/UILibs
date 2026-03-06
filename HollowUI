@@ -609,14 +609,6 @@ function UI:Window(opts)
             W._open = not W._open
         end
 
-        for _, tab in ipairs(W._tabs) do
-            for _, s in ipairs(tab._sections) do
-                for _, w in ipairs(s._widgets) do
-                    if w._poll then w._poll() end
-                end
-            end
-        end
-
         if not W._open then return end
 
         if Input.m1Down then
@@ -685,6 +677,14 @@ function UI:Window(opts)
             for _, s in ipairs(W._activeTab._sections) do
                 for _, w in ipairs(s._widgets) do
                     if w._held then w._held() end
+                end
+            end
+        end
+
+        for _, tab in ipairs(W._tabs) do
+            for _, s in ipairs(tab._sections) do
+                for _, w in ipairs(s._widgets) do
+                    if w._poll then w._poll() end
                 end
             end
         end
