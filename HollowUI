@@ -259,6 +259,10 @@ function Input.Poll(tracked)
 end
 
 -- ============================================================
+if UI and UI._window then
+    pcall(function() UI._window:Unload() end)
+    task.wait(0.1)
+end
 UI = {}
 UI.__index = UI
 
@@ -648,6 +652,7 @@ function UI:Window(opts)
         if b == nil then self._open = not self._open else self._open = b end
     end
     function W:Unload() self._running = false end
+    UI._window = W
 
     function W:Tab(opts)
         opts = opts or {}
