@@ -318,16 +318,35 @@ function UI:Window(opts)
     local dPlrIcon    = H.Sq(13,true,CR)  ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon
     local dPlrInitial = H.Txt(14,12)                ; dPlrInitial.Color = Theme.Text   ; W._drawings.plrInitial = dPlrInitial
 
-    -- DisplayName: use pcall since Matcha's external model may not expose it
     local _userName = tostring(LocalPlayer.Name)
     local _dispName = _userName
     pcall(function()
-        local dn = tostring(LocalPlayer.DisplayName)
-        if dn and dn ~= "" and dn ~= "nil" then _dispName = dn end
+        local dn = LocalPlayer.DisplayName
+        if dn then
+            dn = tostring(dn)
+            if dn ~= "" and dn ~= "nil" and dn ~= _userName then _dispName = dn end
+        end
     end)
+    if _dispName == _userName then
+        pcall(function()
+            local dn = LocalPlayer:GetAttribute("DisplayName")
+            if dn then
+                dn = tostring(dn)
+                if dn ~= "" and dn ~= "nil" then _dispName = dn end
+            end
+        end)
+    end
+
+    local _spoofed = false
+    local _realDisp = _dispName
+    local _realUser = _userName
 
     local dPlrName = H.Txt(13,13) ; dPlrName.Color = Theme.Text    ; W._drawings.plrName = dPlrName
     local dPlrDisp = H.Txt(13,10) ; dPlrDisp.Color = Theme.SubText ; W._drawings.plrDisp = dPlrDisp
+
+    local dSpoofBtn = H.Sq(13,true,4) ; dSpoofBtn.Color = Theme.MinimizeBtn ; W._drawings.spoofBtn = dSpoofBtn
+    local dSpoofTxt = H.Txt(14,9)     ; dSpoofTxt.Color = Theme.SubText     ; dSpoofTxt.Text = "S" ; W._drawings.spoofTxt = dSpoofTxt
+    local spoofR = {pos=H.Vec2(0,0), size=H.Vec2(20,20)}
 
     dPlrName.Text    = _dispName
     dPlrDisp.Text    = "@".._userName
@@ -371,7 +390,7 @@ function UI:Window(opts)
         dTtl.Position = pos + H.Vec2(P+4, TH/2 - Theme.TitleSize/2); dTtl.Visible = isVis; f(dTtl)
         if W.Subtitle ~= "" then
             local titleW = #W.Title * Theme.TitleSize * 0.42
-            dSub.Position = pos + H.Vec2(P+4 + titleW + 14, TH/2 - 6)
+            dSub.Position = pos + H.Vec2(P+4 + titleW + 22, TH/2 - 6)
             dSub.Visible  = isVis; f(dSub)
         else dSub.Visible = false end
 
@@ -411,6 +430,16 @@ function UI:Window(opts)
         dPlrName.Visible  = vis; f(dPlrName)
         dPlrDisp.Position = H.Vec2(iconX + iconSize + 6, iconY + 18)
         dPlrDisp.Visible  = vis; f(dPlrDisp)
+
+        local spBtnSize = 20
+        local spBtnX = pos.X + SB - spBtnSize - P
+        local spBtnY = plrY + plrH/2 - spBtnSize/2
+        spoofR.pos = H.Vec2(spBtnX, spBtnY)
+        dSpoofBtn.Position = H.Vec2(spBtnX, spBtnY); dSpoofBtn.Size = H.Vec2(spBtnSize, spBtnSize)
+        dSpoofBtn.Color = _spoofed and Theme.Accent or Theme.MinimizeBtn
+        dSpoofBtn.Visible = vis; f(dSpoofBtn)
+        dSpoofTxt.Position = H.Vec2(spBtnX + 6, spBtnY + 4)
+        dSpoofTxt.Visible = vis; f(dSpoofTxt)
 
         local tabY = TH + P
         for _, tab in ipairs(W._tabs) do
@@ -561,6 +590,19 @@ function UI:Window(opts)
         if Input.m1Down then
             if H.InRect(clsR.pos, clsR.size) then W._open = false; return end
             if H.InRect(minR.pos, minR.size) then W._minimized = not W._minimized; return end
+            if dSpoofBtn.Visible and H.InRect(spoofR.pos, spoofR.size) then
+                _spoofed = not _spoofed
+                if _spoofed then
+                    dPlrName.Text = "spoofed"
+                    dPlrDisp.Text = "@spoofed"
+                    dPlrInitial.Text = "S"
+                else
+                    dPlrName.Text = _realDisp
+                    dPlrDisp.Text = "@".._realUser
+                    dPlrInitial.Text = string.upper(string.sub(_realDisp, 1, 1))
+                end
+                return
+            end
 
             -- Content scrollbar drag
             if dCsbTrack.Visible and H.InRect(H.Vec2(W._csbTrackX, W._csbTrackY), H.Vec2(10, W._csbTrackH)) then
