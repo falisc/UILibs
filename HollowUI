@@ -1181,6 +1181,9 @@ function UI:Window(opts)
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
                 local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
+                -- List container: filled bg + border outline
+                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.Background ; wg._drawings.lc=dLC
+                local dLB=H.Sq(19,false,CR); dLB.Color=Theme.Accent    ; wg._drawings.lb=dLB
                 local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack
                 local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
                 local od={}
@@ -1214,6 +1217,19 @@ function UI:Window(opts)
                     local listH = visible * 26
                     wg._listX=x; wg._listY=listY; wg._listH=listH
 
+                    if wg._open then
+                        local contH = listH + 4
+                        local cTop = ct and math.max(listY, ct) or listY
+                        local cBot = cb2 and math.min(listY+contH, cb2) or listY+contH
+                        local cH = math.max(0, cBot-cTop)
+                        dLC.Position=H.Vec2(x,cTop); dLC.Size=H.Vec2(w,cH); dLC.Visible=cH>0
+                        if dLC.Visible then dLC.Transparency=_openProg end
+                        dLB.Position=H.Vec2(x,cTop); dLB.Size=H.Vec2(w,cH); dLB.Visible=cH>0
+                        if dLB.Visible then dLB.Transparency=_openProg end
+                    else
+                        dLC.Visible=false; dLB.Visible=false
+                    end
+
                     for i=1,MAX_ROWS do
                         local o=od[i]; local opt=wg._options[i+wg._scroll]
                         if wg._open and opt then
@@ -1224,7 +1240,6 @@ function UI:Window(opts)
                             if ov then o.b.Transparency=_openProg end
                             local otv=H.TxtClip(oy+5,Theme.FontSize,ct,cb2)
                             o.t.Text=opt; o.t.Position=H.Vec2(x+8,oy+5); o.t.Visible=otv
-                            
                         else o.b.Visible=false; o.t.Visible=false end
                     end
 
@@ -1291,6 +1306,8 @@ function UI:Window(opts)
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
                 local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
+                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.Background ; wg._drawings.lc=dLC
+                local dLB=H.Sq(19,false,CR); dLB.Color=Theme.Accent    ; wg._drawings.lb=dLB
                 local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack
                 local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
                 local od={}
@@ -1328,6 +1345,19 @@ function UI:Window(opts)
                     local listH = visible * 26
                     wg._listX=x; wg._listY=listY; wg._listH=listH
 
+                    if wg._open then
+                        local contH = listH + 4
+                        local cTop = ct and math.max(listY, ct) or listY
+                        local cBot = cb2 and math.min(listY+contH, cb2) or listY+contH
+                        local cH = math.max(0, cBot-cTop)
+                        dLC.Position=H.Vec2(x,cTop); dLC.Size=H.Vec2(w,cH); dLC.Visible=cH>0
+                        if dLC.Visible then dLC.Transparency=_openProg end
+                        dLB.Position=H.Vec2(x,cTop); dLB.Size=H.Vec2(w,cH); dLB.Visible=cH>0
+                        if dLB.Visible then dLB.Transparency=_openProg end
+                    else
+                        dLC.Visible=false; dLB.Visible=false
+                    end
+
                     for i=1,MAX_ROWS do
                         local o=od[i]; local opt=wg._options[i+wg._scroll]
                         local sel=opt and table.find(wg._value,opt)
@@ -1339,7 +1369,6 @@ function UI:Window(opts)
                             if ov then o.b.Transparency=_openProg end
                             local otv=H.TxtClip(oy+5,Theme.FontSize,ct,cb2)
                             o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=otv
-                            
                             o.c.Position=H.Vec2(x+6,oy+5); o.c.Size=H.Vec2(14,14)
                             o.c.Color=sel and Theme.Accent or Theme.SliderBg; o.c.Corner=3; o.c.Visible=ov
                             if ov then o.c.Transparency=_openProg end
