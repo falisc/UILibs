@@ -897,23 +897,27 @@ function UI:Window(opts)
             S._measure = function(w)
                 local HH = S._title ~= "" and 28 or 0
                 local ip = P
-                local th = HH + ip
-                if not S._collapsed then
+                if S._collapsed then
+                    S._h = HH
+                else
+                    local th = HH + ip
                     for _, wg in ipairs(S._widgets) do th = th + wg._h + ip/2 end
                     th = th + ip/2
+                    S._h = math.max(th, HH > 0 and HH or 50)
                 end
-                S._h = math.max(th, HH > 0 and HH or 50)
             end
 
             S._upd = function(x, y, w, ct, cbot)
                 local HH = S._title ~= "" and 28 or 0
                 local ip = P
-                local th = HH + ip
-                if not S._collapsed then
+                if S._collapsed then
+                    S._h = HH
+                else
+                    local th = HH + ip
                     for _, wg in ipairs(S._widgets) do th = th + wg._h + ip/2 end
                     th = th + ip/2
+                    S._h = math.max(th, HH > 0 and HH or 50)
                 end
-                S._h = math.max(th, HH > 0 and HH or 50)
 
                 local sTop = ct and math.max(y, ct) or y
                 local sBot = cbot and math.min(y + S._h, cbot) or (y + S._h)
