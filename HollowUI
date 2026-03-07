@@ -936,20 +936,20 @@ function UI:Window(opts)
                     if dHf.Visible then dHf.Transparency=_openProg end
                     dSt.Position=H.Vec2(x+ip,y+HH/2-6); dSt.Visible=H.TxtClip(y+HH/2-6,Theme.FontSize,ct,cbot)
                     -- Collapse button: right side of header
-                    local cbCX = x + w - 10  -- center X of button
-                    local cbCY = y + HH/2    -- center Y of button
+                    local cbCX = x + w - 10
+                    local cbCY = y + HH/2
                     _cbRect.pos  = H.Vec2(cbCX - 8, y + 2)
                     _cbRect.size = H.Vec2(16, HH - 4)
                     local inView = H.InClip(y, HH, ct, cbot)
                     if S._collapsed then
-                        -- right-pointing triangle
-                        dCb.PointA = H.Vec2(cbCX - 4, cbCY - 5)
-                        dCb.PointB = H.Vec2(cbCX - 4, cbCY + 5)
+                        -- right-pointing triangle, fixed size
+                        dCb.PointA = H.Vec2(cbCX - 4, cbCY - 4)
+                        dCb.PointB = H.Vec2(cbCX - 4, cbCY + 4)
                         dCb.PointC = H.Vec2(cbCX + 4, cbCY)
                     else
-                        -- down-pointing triangle
-                        dCb.PointA = H.Vec2(cbCX - 5, cbCY - 3)
-                        dCb.PointB = H.Vec2(cbCX + 5, cbCY - 3)
+                        -- down-pointing triangle, same size
+                        dCb.PointA = H.Vec2(cbCX - 4, cbCY - 3)
+                        dCb.PointB = H.Vec2(cbCX + 4, cbCY - 3)
                         dCb.PointC = H.Vec2(cbCX,     cbCY + 4)
                     end
                     dCb.Visible = inView
@@ -1016,7 +1016,7 @@ function UI:Window(opts)
                 local wg = { _drawings={}, _h=30, _title=wo.Title or "Button" }
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
-                local dA=H.Txt(18); dA.Color=Theme.SubText; dA.Text="»" ; wg._drawings.a=dA
+                local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
                 wg._upd = function(x,y,w,ct,cbot)
                     local vis=H.InClip(y,26,ct,cbot)
                     local bTop=ct and math.max(y,ct) or y
@@ -1026,9 +1026,11 @@ function UI:Window(opts)
                     if dB.Visible then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+5,Theme.FontSize,ct,cbot)
                     dT.Position=H.Vec2(x+8,y+5); dT.Visible=tv
-                    
-                    dA.Position=H.Vec2(x+w-18,y+5); dA.Visible=tv
-                    
+                    -- right-pointing triangle arrow
+                    local ax = x+w-12; local ay = y+13
+                    dA.PointA=H.Vec2(ax-3,ay-4); dA.PointB=H.Vec2(ax-3,ay+4); dA.PointC=H.Vec2(ax+4,ay)
+                    dA.Visible=tv
+                    if tv then dA.Transparency=_openProg end
                 end
                 wg._click = function()
                     if dB.Visible and H.InRect(dB.Position,dB.Size) then cb() end
@@ -1178,7 +1180,7 @@ function UI:Window(opts)
                 wg._value = wo.Default or wg._options[1]
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
-                local dA=H.Txt(18); dA.Color=Theme.SubText ; wg._drawings.a=dA
+                local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
                 local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack
                 local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
                 local od={}
@@ -1198,9 +1200,15 @@ function UI:Window(opts)
                     if bv then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cb2)
                     dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=tv
-                    
-                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=tv
-                    
+                    -- triangle arrow: down when closed, up when open
+                    local ax=x+w-11; local ay=y+14
+                    if wg._open then
+                        dA.PointA=H.Vec2(ax-4,ay+3); dA.PointB=H.Vec2(ax+4,ay+3); dA.PointC=H.Vec2(ax,ay-3)
+                    else
+                        dA.PointA=H.Vec2(ax-4,ay-3); dA.PointB=H.Vec2(ax+4,ay-3); dA.PointC=H.Vec2(ax,ay+3)
+                    end
+                    dA.Visible=tv
+                    if tv then dA.Transparency=_openProg end
 
                     local listY = y + 30
                     local listH = visible * 26
@@ -1282,7 +1290,7 @@ function UI:Window(opts)
                 wg._value = wo.Default or {}
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
-                local dA=H.Txt(18); dA.Color=Theme.SubText ; wg._drawings.a=dA
+                local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
                 local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack
                 local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
                 local od={}
@@ -1306,9 +1314,15 @@ function UI:Window(opts)
                     if bv then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cb2)
                     dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=tv
-                    
-                    dA.Text=wg._open and "«" or "»"; dA.Position=H.Vec2(x+w-18,y+7); dA.Visible=tv
-                    
+                    -- triangle arrow: down when closed, up when open
+                    local ax=x+w-11; local ay=y+14
+                    if wg._open then
+                        dA.PointA=H.Vec2(ax-4,ay+3); dA.PointB=H.Vec2(ax+4,ay+3); dA.PointC=H.Vec2(ax,ay-3)
+                    else
+                        dA.PointA=H.Vec2(ax-4,ay-3); dA.PointB=H.Vec2(ax+4,ay-3); dA.PointC=H.Vec2(ax,ay+3)
+                    end
+                    dA.Visible=tv
+                    if tv then dA.Transparency=_openProg end
 
                     local listY = y + 30
                     local listH = visible * 26
