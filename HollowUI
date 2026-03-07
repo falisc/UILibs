@@ -298,7 +298,7 @@ function UI:Window(opts)
     local dSideTop = H.Sq(11,true,0) ; dSideTop.Color = Theme.Sidebar ; W._drawings.sideTop = dSideTop
     local dSideB= H.Sq(12,true,0) ; dSideB.Color= Theme.Border ; W._drawings.sideB= dSideB
     local dTtl  = H.Txt(13,Theme.TitleSize) ; dTtl.Color=Theme.Text    ; dTtl.Text=W.Title    ; W._drawings.ttl=dTtl
-    local dSub  = H.Txt(13,12) ; dSub.Color=Theme.SubText ; dSub.Text=W.Subtitle ; W._drawings.sub=dSub
+    local dSub  = H.Txt(13,Theme.TitleSize-2) ; dSub.Color=Color3.fromRGB(110,110,120) ; dSub.Text=W.Subtitle ; W._drawings.sub=dSub
     local dCls  = H.Sq(13,true,CR)  ; dCls.Color = Theme.CloseBtn   ; W._drawings.cls  = dCls
     local dCX1  = H.Ln(14,2)       ; dCX1.Color = Theme.Text        ; W._drawings.cx1  = dCX1
     local dCX2  = H.Ln(14,2)       ; dCX2.Color = Theme.Text        ; W._drawings.cx2  = dCX2
@@ -396,12 +396,12 @@ function UI:Window(opts)
         dTtl.Position = H.Vec2(titleX, titleY)
         dTtl.Visible  = isVis; ft(dTtl)
 
-        -- Subtitle: snug right of title with small gap
+        -- Subtitle: same line as title, slightly smaller, faded
         if W.Subtitle ~= "" then
             local titleCharW = Theme.TitleSize * 0.52
             local titleTextW = #W.Title * titleCharW
             local subX = titleX + titleTextW + 2
-            local subY = pos.Y + TH/2 - 4
+            local subY = pos.Y + TH/2 - (Theme.TitleSize-2)/2
             dSub.Position = H.Vec2(subX, subY)
             dSub.Visible  = isVis; ft(dSub)
         else
@@ -425,9 +425,9 @@ function UI:Window(opts)
         local bkY = mPos.Y + btn.Y/2 - sqS/2 - sqOff
         local ftX = mPos.X + btn.X/2 - sqS/2 - sqOff + 1
         local ftY = mPos.Y + btn.Y/2 - sqS/2 + sqOff - 1
-        dMinSqB.Position=H.Vec2(bkX,bkY); dMinSqB.Size=H.Vec2(sqS,sqS); dMinSqB.Color=Theme.MinimizeBtn; dMinSqB.Corner=1; dMinSqB.Visible=isVis; f(dMinSqB)
-        dMinSqBo.Position=H.Vec2(bkX,bkY); dMinSqBo.Size=H.Vec2(sqS,sqS); dMinSqBo.Color=Theme.Text; dMinSqBo.Corner=1; dMinSqBo.Visible=isVis; f(dMinSqBo)
-        dMinSqF.Position=H.Vec2(ftX,ftY); dMinSqF.Size=H.Vec2(sqS,sqS); dMinSqF.Color=Theme.Text; dMinSqF.Corner=1; dMinSqF.Visible=isVis; f(dMinSqF)
+        dMinSqB.Position=H.Vec2(bkX,bkY); dMinSqB.Size=H.Vec2(sqS,sqS); dMinSqB.Color=Theme.Text; dMinSqB.Corner=1; dMinSqB.Visible=isVis; f(dMinSqB)
+        dMinSqBo.Position=H.Vec2(bkX,bkY); dMinSqBo.Size=H.Vec2(sqS,sqS); dMinSqBo.Color=Theme.MinimizeBtn; dMinSqBo.Corner=1; dMinSqBo.Visible=isVis; f(dMinSqBo)
+        dMinSqF.Position=H.Vec2(ftX,ftY); dMinSqF.Size=H.Vec2(sqS,sqS); dMinSqF.Color=Theme.Text; dMinSqF.Corner=1; dMinSqF.Filled=true; dMinSqF.Visible=isVis; f(dMinSqF)
 
         dSep.From=pos+H.Vec2(0,TH); dSep.To=pos+H.Vec2(sz.X,TH); dSep.Visible=isVis; f(dSep)
 
