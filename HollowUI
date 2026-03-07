@@ -302,8 +302,11 @@ function UI:Window(opts)
     local dCls  = H.Sq(13,true,CR)  ; dCls.Color = Theme.CloseBtn   ; W._drawings.cls  = dCls
     local dCX1  = H.Ln(14,2)       ; dCX1.Color = Theme.Text        ; W._drawings.cx1  = dCX1
     local dCX2  = H.Ln(14,2)       ; dCX2.Color = Theme.Text        ; W._drawings.cx2  = dCX2
-    local dMin  = H.Sq(13,true,CR)  ; dMin.Color = Theme.MinimizeBtn ; W._drawings.min  = dMin
-    local dMinL = H.Ln(14,2)       ; dMinL.Color= Theme.Text        ; W._drawings.minL = dMinL
+    local dMin    = H.Sq(13,true,CR) ; dMin.Color = Theme.MinimizeBtn ; W._drawings.min    = dMin
+    -- Double-square restore icon: back square (filled) + front square (outline via 4 lines)
+    local dMinSqB = H.Sq(14,true,2)  ; dMinSqB.Color = Theme.MinimizeBtn ; W._drawings.minSqB = dMinSqB  -- back filled
+    local dMinSqF = H.Sq(14,false,2) ; dMinSqF.Color = Theme.Text        ; W._drawings.minSqF = dMinSqF  -- front outline
+    local dMinSqBo= H.Sq(15,false,2) ; dMinBo_color = Theme.Text ; dMinSqBo.Color = Theme.Text ; W._drawings.minSqBo= dMinSqBo -- back outline
     local dSep  = H.Ln(12,1)       ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep
 
     -- Ghost logo: body (rounded square), two eyes (circles), three skirt triangles
@@ -397,7 +400,7 @@ function UI:Window(opts)
         if W.Subtitle ~= "" then
             local titleCharW = Theme.TitleSize * 0.52
             local titleTextW = #W.Title * titleCharW
-            local subX = titleX + titleTextW + 4
+            local subX = titleX + titleTextW + 2
             local subY = pos.Y + TH/2 - 4
             dSub.Position = H.Vec2(subX, subY)
             dSub.Visible  = isVis; ft(dSub)
@@ -414,7 +417,17 @@ function UI:Window(opts)
         local mPos = pos + H.Vec2(sz.X - btn.X*2 - P*2, TH/2 - btn.Y/2)
         minR.pos = mPos
         dMin.Position=mPos; dMin.Size=btn; dMin.Visible=isVis; f(dMin)
-        dMinL.From=mPos+H.Vec2(4,btn.Y/2); dMinL.To=mPos+H.Vec2(btn.X-4,btn.Y/2); dMinL.Visible=isVis; f(dMinL)
+        -- Double-square restore icon inside button
+        -- Back square: offset top-right
+        local sqS = 8   -- square size
+        local sqOff = 3 -- offset between the two squares
+        local bkX = mPos.X + btn.X/2 - sqS/2 + sqOff
+        local bkY = mPos.Y + btn.Y/2 - sqS/2 - sqOff
+        local ftX = mPos.X + btn.X/2 - sqS/2 - sqOff + 1
+        local ftY = mPos.Y + btn.Y/2 - sqS/2 + sqOff - 1
+        dMinSqB.Position=H.Vec2(bkX,bkY); dMinSqB.Size=H.Vec2(sqS,sqS); dMinSqB.Color=Theme.MinimizeBtn; dMinSqB.Corner=1; dMinSqB.Visible=isVis; f(dMinSqB)
+        dMinSqBo.Position=H.Vec2(bkX,bkY); dMinSqBo.Size=H.Vec2(sqS,sqS); dMinSqBo.Color=Theme.Text; dMinSqBo.Corner=1; dMinSqBo.Visible=isVis; f(dMinSqBo)
+        dMinSqF.Position=H.Vec2(ftX,ftY); dMinSqF.Size=H.Vec2(sqS,sqS); dMinSqF.Color=Theme.Text; dMinSqF.Corner=1; dMinSqF.Visible=isVis; f(dMinSqF)
 
         dSep.From=pos+H.Vec2(0,TH); dSep.To=pos+H.Vec2(sz.X,TH); dSep.Visible=isVis; f(dSep)
 
