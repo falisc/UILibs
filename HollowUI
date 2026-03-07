@@ -298,7 +298,6 @@ function UI:Window(opts)
     local dSideTop = H.Sq(11,true,0) ; dSideTop.Color = Theme.Sidebar ; W._drawings.sideTop = dSideTop
     local dSideB= H.Sq(12,true,0) ; dSideB.Color= Theme.Border ; W._drawings.sideB= dSideB
     local dTtl  = H.Txt(13,Theme.TitleSize) ; dTtl.Color=Theme.Text    ; dTtl.Text=W.Title    ; W._drawings.ttl=dTtl
-    -- Subtitle: smaller, subdued, vertically centered same as title but baseline-aligned
     local dSub  = H.Txt(13,12) ; dSub.Color=Theme.SubText ; dSub.Text=W.Subtitle ; W._drawings.sub=dSub
     local dCls  = H.Sq(13,true,CR)  ; dCls.Color = Theme.CloseBtn   ; W._drawings.cls  = dCls
     local dCX1  = H.Ln(14,2)       ; dCX1.Color = Theme.Text        ; W._drawings.cx1  = dCX1
@@ -306,6 +305,15 @@ function UI:Window(opts)
     local dMin  = H.Sq(13,true,CR)  ; dMin.Color = Theme.MinimizeBtn ; W._drawings.min  = dMin
     local dMinL = H.Ln(14,2)       ; dMinL.Color= Theme.Text        ; W._drawings.minL = dMinL
     local dSep  = H.Ln(12,1)       ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep
+
+    -- Ghost logo: body (rounded square), two eyes (circles), three skirt triangles
+    local dGhostBody  = H.Sq(13,true,8)  ; dGhostBody.Color  = Theme.Accent  ; W._drawings.ghostBody  = dGhostBody
+    local dGhostEyeL  = H.Circ(14)       ; dGhostEyeL.Color  = Theme.TopBar  ; dGhostEyeL.NumSides=20 ; dGhostEyeL.Radius=2.5 ; W._drawings.ghostEyeL  = dGhostEyeL
+    local dGhostEyeR  = H.Circ(14)       ; dGhostEyeR.Color  = Theme.TopBar  ; dGhostEyeR.NumSides=20 ; dGhostEyeR.Radius=2.5 ; W._drawings.ghostEyeR  = dGhostEyeR
+    -- Three bottom triangles cut into the skirt (TopBar color to fake cutouts)
+    local dGhostSkL   = Drawing.new("Triangle") ; dGhostSkL.Filled=true ; dGhostSkL.Color=Theme.TopBar ; dGhostSkL.ZIndex=14 ; dGhostSkL.Visible=false ; W._drawings.ghostSkL = dGhostSkL
+    local dGhostSkM   = Drawing.new("Triangle") ; dGhostSkM.Filled=true ; dGhostSkM.Color=Theme.TopBar ; dGhostSkM.ZIndex=14 ; dGhostSkM.Visible=false ; W._drawings.ghostSkM = dGhostSkM
+    local dGhostSkR   = Drawing.new("Triangle") ; dGhostSkR.Filled=true ; dGhostSkR.Color=Theme.TopBar ; dGhostSkR.ZIndex=14 ; dGhostSkR.Visible=false ; W._drawings.ghostSkR = dGhostSkR
 
     local dPlrBg      = H.Sq(12,true,CR) ; dPlrBg.Color = Theme.TabActive ; W._drawings.plrBg      = dPlrBg
     local dPlrBgFix   = H.Sq(12,true,0)  ; dPlrBgFix.Color = Theme.TabActive ; W._drawings.plrBgFix   = dPlrBgFix
@@ -363,8 +371,24 @@ function UI:Window(opts)
         dSideTop.Position = pos + H.Vec2(0,TH); dSideTop.Size = H.Vec2(SB, CR*2); dSideTop.Visible = vis; f(dSideTop)
         dSideB.Position= pos + H.Vec2(SB,TH); dSideB.Size= H.Vec2(1,bodyH); dSideB.Visible= vis; f(dSideB)
 
-        -- Title: left-aligned, vertically centered in topbar
-        local titleX = pos.X + P + 4
+        -- Ghost logo in top-left of topbar
+        local gW, gH = 22, 26
+        local gX = pos.X + P + 2
+        local gY = pos.Y + TH/2 - gH/2
+        dGhostBody.Position = H.Vec2(gX, gY); dGhostBody.Size = H.Vec2(gW, gH)
+        dGhostBody.Color = Theme.Accent; dGhostBody.Visible = isVis; f(dGhostBody)
+        dGhostEyeL.Position = H.Vec2(gX + 6,  gY + 9); dGhostEyeL.Visible = isVis; f(dGhostEyeL)
+        dGhostEyeR.Position = H.Vec2(gX + 16, gY + 9); dGhostEyeR.Visible = isVis; f(dGhostEyeR)
+        local skY = gY + gH; local skH = 6; local skW = gW / 3
+        dGhostSkL.PointA=H.Vec2(gX,         skY-skH); dGhostSkL.PointB=H.Vec2(gX+skW,       skY); dGhostSkL.PointC=H.Vec2(gX,         skY)
+        dGhostSkM.PointA=H.Vec2(gX+skW,     skY);     dGhostSkM.PointB=H.Vec2(gX+skW*1.5,   skY-skH); dGhostSkM.PointC=H.Vec2(gX+skW*2,   skY)
+        dGhostSkR.PointA=H.Vec2(gX+skW*2,   skY);     dGhostSkR.PointB=H.Vec2(gX+gW,        skY-skH); dGhostSkR.PointC=H.Vec2(gX+gW,      skY)
+        dGhostSkL.Visible=isVis; f(dGhostSkL)
+        dGhostSkM.Visible=isVis; f(dGhostSkM)
+        dGhostSkR.Visible=isVis; f(dGhostSkR)
+
+        -- Title: shifted right of ghost
+        local titleX = pos.X + P + gW + 12
         local titleY = pos.Y + TH/2 - Theme.TitleSize/2
         dTtl.Position = H.Vec2(titleX, titleY)
         dTtl.Visible  = isVis; ft(dTtl)
@@ -374,7 +398,7 @@ function UI:Window(opts)
             local titleCharW = Theme.TitleSize * 0.52
             local titleTextW = #W.Title * titleCharW
             local subX = titleX + titleTextW + 4
-            local subY = pos.Y + TH/2 - 6
+            local subY = pos.Y + TH/2 - 4
             dSub.Position = H.Vec2(subX, subY)
             dSub.Visible  = isVis; ft(dSub)
         else
@@ -853,7 +877,7 @@ function UI:Window(opts)
             local dHf = H.Sq(15,true,0) ; dHf.Color = Theme.SectionHeader ; S._drawings.hf = dHf
             local dSt = H.Txt(16,12)  ; dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt
             -- Collapse toggle button in section header
-            local dCb = H.Txt(16,11) ; dCb.Color = Theme.SubText ; dCb.Text = "v" ; S._drawings.cb = dCb
+            local dCb = Drawing.new("Triangle") ; dCb.Color = Theme.SubText ; dCb.Filled = true ; dCb.Visible = false ; dCb.ZIndex = 16 ; S._drawings.cb = dCb
             -- Hit rect for collapse button
             local _cbRect = {pos=H.Vec2(0,0), size=H.Vec2(16,16)}
 
@@ -895,13 +919,23 @@ function UI:Window(opts)
                     if dHf.Visible then dHf.Transparency=_openProg end
                     dSt.Position=H.Vec2(x+ip,y+HH/2-6); dSt.Visible=H.TxtClip(y+HH/2-6,Theme.FontSize,ct,cbot)
                     -- Collapse button: right side of header
-                    local cbX = x + w - 16
-                    local cbY = y + HH/2 - 6
-                    _cbRect.pos  = H.Vec2(cbX - 2, y + 2)
-                    _cbRect.size = H.Vec2(18, HH - 4)
-                    dCb.Text     = S._collapsed and ">" or "v"
-                    dCb.Position = H.Vec2(cbX, cbY)
-                    dCb.Visible  = H.TxtClip(cbY, 12, ct, cbot)
+                    local cbCX = x + w - 10  -- center X of button
+                    local cbCY = y + HH/2    -- center Y of button
+                    _cbRect.pos  = H.Vec2(cbCX - 8, y + 2)
+                    _cbRect.size = H.Vec2(16, HH - 4)
+                    local inView = H.InClip(y, HH, ct, cbot)
+                    if S._collapsed then
+                        -- right-pointing triangle
+                        dCb.PointA = H.Vec2(cbCX - 4, cbCY - 5)
+                        dCb.PointB = H.Vec2(cbCX - 4, cbCY + 5)
+                        dCb.PointC = H.Vec2(cbCX + 4, cbCY)
+                    else
+                        -- down-pointing triangle
+                        dCb.PointA = H.Vec2(cbCX - 5, cbCY - 3)
+                        dCb.PointB = H.Vec2(cbCX + 5, cbCY - 3)
+                        dCb.PointC = H.Vec2(cbCX,     cbCY + 4)
+                    end
+                    dCb.Visible = inView
                     if dCb.Visible then dCb.Transparency = _openProg end
                 else
                     dHd.Visible=false; dHf.Visible=false; dSt.Visible=false; dCb.Visible=false
