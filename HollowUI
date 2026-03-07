@@ -1181,14 +1181,17 @@ function UI:Window(opts)
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
                 local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
-                -- List container: filled bg + border outline
-                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.Background ; wg._drawings.lc=dLC
-                local dLB=H.Sq(19,false,CR); dLB.Color=Theme.Accent    ; wg._drawings.lb=dLB
+                -- List container: filled bg + 4-line border
+                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.Section ; wg._drawings.lc=dLC
+                local dBL=H.Ln(22,1.5); dBL.Color=Theme.Accent ; wg._drawings.bl=dBL
+                local dBR=H.Ln(22,1.5); dBR.Color=Theme.Accent ; wg._drawings.br=dBR
+                local dBT=H.Ln(22,1.5); dBT.Color=Theme.Accent ; wg._drawings.bt=dBT
+                local dBBot=H.Ln(22,1.5); dBBot.Color=Theme.Accent ; wg._drawings.bb=dBBot
                 local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack
                 local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
                 local od={}
                 for i=1,MAX_ROWS do
-                    local ob=H.Sq(20,true,CR); ob.Color=Theme.Section
+                    local ob=H.Sq(20,true,CR); ob.Color=Theme.Accent
                     local ot=H.Txt(21); ot.Color=Theme.Text
                     table.insert(od,{b=ob,t=ot})
                     table.insert(wg._xd,ob); table.insert(wg._xd,ot)
@@ -1222,12 +1225,16 @@ function UI:Window(opts)
                         local cTop = ct and math.max(listY, ct) or listY
                         local cBot = cb2 and math.min(listY+contH, cb2) or listY+contH
                         local cH = math.max(0, cBot-cTop)
-                        dLC.Position=H.Vec2(x,cTop); dLC.Size=H.Vec2(w,cH); dLC.Visible=cH>0
+                        local cx2 = x+w
+                        dLC.Position=H.Vec2(x,cTop); dLC.Size=H.Vec2(w,cH); dLC.Visible=cH>0; dLC.Corner=CR
                         if dLC.Visible then dLC.Transparency=_openProg end
-                        dLB.Position=H.Vec2(x,cTop); dLB.Size=H.Vec2(w,cH); dLB.Visible=cH>0
-                        if dLB.Visible then dLB.Transparency=_openProg end
+                        dBT.From=H.Vec2(x,cTop);      dBT.To=H.Vec2(cx2,cTop);    dBT.Visible=cH>0
+                        dBBot.From=H.Vec2(x,cTop+cH); dBBot.To=H.Vec2(cx2,cTop+cH); dBBot.Visible=cH>0
+                        dBL.From=H.Vec2(x,cTop);      dBL.To=H.Vec2(x,cTop+cH);   dBL.Visible=cH>0
+                        dBR.From=H.Vec2(cx2,cTop);    dBR.To=H.Vec2(cx2,cTop+cH); dBR.Visible=cH>0
+                        if cH>0 then dBT.Transparency=_openProg; dBBot.Transparency=_openProg; dBL.Transparency=_openProg; dBR.Transparency=_openProg end
                     else
-                        dLC.Visible=false; dLB.Visible=false
+                        dLC.Visible=false; dBL.Visible=false; dBR.Visible=false; dBT.Visible=false; dBBot.Visible=false
                     end
 
                     for i=1,MAX_ROWS do
@@ -1235,11 +1242,14 @@ function UI:Window(opts)
                         if wg._open and opt then
                             local oy = listY + (i-1)*26
                             local ov=H.InClip(oy,25,ct,cb2)
-                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,25)
-                            o.b.Color=(opt==wg._value) and Theme.Accent or Theme.Section; o.b.Visible=ov
-                            if ov then o.b.Transparency=_openProg end
+                            -- only show bg for selected row
+                            o.b.Position=H.Vec2(x+2,oy); o.b.Size=H.Vec2(w-4,24)
+                            o.b.Color=Theme.Accent; o.b.Visible=(opt==wg._value) and ov or false
+                            o.b.Corner=CR
+                            if o.b.Visible then o.b.Transparency=_openProg end
                             local otv=H.TxtClip(oy+5,Theme.FontSize,ct,cb2)
-                            o.t.Text=opt; o.t.Position=H.Vec2(x+8,oy+5); o.t.Visible=otv
+                            o.t.Text=opt; o.t.Position=H.Vec2(x+10,oy+5); o.t.Visible=otv
+                            o.t.Color=(opt==wg._value) and Theme.Text or Theme.SubText
                         else o.b.Visible=false; o.t.Visible=false end
                     end
 
@@ -1306,8 +1316,11 @@ function UI:Window(opts)
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
                 local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
-                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.Background ; wg._drawings.lc=dLC
-                local dLB=H.Sq(19,false,CR); dLB.Color=Theme.Accent    ; wg._drawings.lb=dLB
+                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.Section ; wg._drawings.lc=dLC
+                local dBL=H.Ln(22,1.5); dBL.Color=Theme.Accent ; wg._drawings.bl=dBL
+                local dBR=H.Ln(22,1.5); dBR.Color=Theme.Accent ; wg._drawings.br=dBR
+                local dBT=H.Ln(22,1.5); dBT.Color=Theme.Accent ; wg._drawings.bt=dBT
+                local dBBot=H.Ln(22,1.5); dBBot.Color=Theme.Accent ; wg._drawings.bb=dBBot
                 local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack
                 local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
                 local od={}
@@ -1350,12 +1363,16 @@ function UI:Window(opts)
                         local cTop = ct and math.max(listY, ct) or listY
                         local cBot = cb2 and math.min(listY+contH, cb2) or listY+contH
                         local cH = math.max(0, cBot-cTop)
-                        dLC.Position=H.Vec2(x,cTop); dLC.Size=H.Vec2(w,cH); dLC.Visible=cH>0
+                        local cx2 = x+w
+                        dLC.Position=H.Vec2(x,cTop); dLC.Size=H.Vec2(w,cH); dLC.Visible=cH>0; dLC.Corner=CR
                         if dLC.Visible then dLC.Transparency=_openProg end
-                        dLB.Position=H.Vec2(x,cTop); dLB.Size=H.Vec2(w,cH); dLB.Visible=cH>0
-                        if dLB.Visible then dLB.Transparency=_openProg end
+                        dBT.From=H.Vec2(x,cTop);      dBT.To=H.Vec2(cx2,cTop);    dBT.Visible=cH>0
+                        dBBot.From=H.Vec2(x,cTop+cH); dBBot.To=H.Vec2(cx2,cTop+cH); dBBot.Visible=cH>0
+                        dBL.From=H.Vec2(x,cTop);      dBL.To=H.Vec2(x,cTop+cH);   dBL.Visible=cH>0
+                        dBR.From=H.Vec2(cx2,cTop);    dBR.To=H.Vec2(cx2,cTop+cH); dBR.Visible=cH>0
+                        if cH>0 then dBT.Transparency=_openProg; dBBot.Transparency=_openProg; dBL.Transparency=_openProg; dBR.Transparency=_openProg end
                     else
-                        dLC.Visible=false; dLB.Visible=false
+                        dLC.Visible=false; dBL.Visible=false; dBR.Visible=false; dBT.Visible=false; dBBot.Visible=false
                     end
 
                     for i=1,MAX_ROWS do
@@ -1364,12 +1381,13 @@ function UI:Window(opts)
                         if wg._open and opt then
                             local oy = listY + (i-1)*26
                             local ov=H.InClip(oy,25,ct,cb2)
-                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(rowW,25)
-                            o.b.Color=sel and Theme.Accent or Theme.Section; o.b.Visible=ov
-                            if ov then o.b.Transparency=_openProg end
+                            o.b.Position=H.Vec2(x+2,oy); o.b.Size=H.Vec2(w-4,24)
+                            o.b.Color=Theme.Accent; o.b.Visible=sel and ov or false; o.b.Corner=CR
+                            if o.b.Visible then o.b.Transparency=_openProg end
                             local otv=H.TxtClip(oy+5,Theme.FontSize,ct,cb2)
                             o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=otv
-                            o.c.Position=H.Vec2(x+6,oy+5); o.c.Size=H.Vec2(14,14)
+                            o.t.Color=sel and Theme.Text or Theme.SubText
+                            o.c.Position=H.Vec2(x+6,oy+6); o.c.Size=H.Vec2(13,13)
                             o.c.Color=sel and Theme.Accent or Theme.SliderBg; o.c.Corner=3; o.c.Visible=ov
                             if ov then o.c.Transparency=_openProg end
                         else o.b.Visible=false; o.t.Visible=false; o.c.Visible=false end
