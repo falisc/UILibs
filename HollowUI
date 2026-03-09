@@ -46,6 +46,15 @@
     Window:SetKey(0xA1)    -- change window toggle key at any time (default RightShift)
     Window:SetKey(nil)     -- disable window toggle key
     Window:Unload()        -- destroy UI
+    
+    -- Theme switching (no re-execute needed):
+    Window:SetTheme("Crimson")   -- switch theme by name at any time
+    -- Available themes: Discord, Crimson, Midnight, Forest, Ash
+    
+    -- One-liner to add a theme dropdown to a settings section:
+    local SettingsTab = Window:Tab({ Title = "Settings" })
+    local Appearance  = SettingsTab:Section({ Title = "Appearance" })
+    Window:ThemeDropdown(Appearance, "Theme")
 ]]
 
 local Players     = game:GetService("Players")
