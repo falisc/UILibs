@@ -1125,7 +1125,8 @@ function UI:Window(opts)
                 local wg = { _drawings={}, _h=30, _title=wo.Title or "Button" }
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
-                local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
+                local dA1=H.Ln(18,1.5); dA1.Color=Theme.SubText ; wg._drawings.a1=dA1
+                local dA2=H.Ln(18,1.5); dA2.Color=Theme.SubText ; wg._drawings.a2=dA2
                 wg._upd = function(x,y,w,ct,cbot)
                     local vis=H.InClip(y,26,ct,cbot)
                     local bTop=ct and math.max(y,ct) or y
@@ -1135,10 +1136,13 @@ function UI:Window(opts)
                     if dB.Visible then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+5,Theme.FontSize,ct,cbot)
                     dT.Position=H.Vec2(x+8,y+5); dT.Visible=tv
-                    local ax=x+w-12; local ay=y+13
-                    dA.PointA=H.Vec2(ax-3,ay-4); dA.PointB=H.Vec2(ax-3,ay+4); dA.PointC=H.Vec2(ax+4,ay)
-                    dA.Color=Theme.SubText; dA.Visible=tv
-                    if tv then dA.Transparency=_openProg end
+                    -- chevron: two lines forming a > shape
+                    local cx=x+w-13; local cy=y+13
+                    dA1.From=H.Vec2(cx,cy-4); dA1.To=H.Vec2(cx+5,cy)
+                    dA2.From=H.Vec2(cx+5,cy); dA2.To=H.Vec2(cx,cy+4)
+                    dA1.Color=Theme.SubText; dA2.Color=Theme.SubText
+                    dA1.Visible=tv; dA2.Visible=tv
+                    if tv then dA1.Transparency=_openProg; dA2.Transparency=_openProg end
                 end
                 wg._click = function()
                     if dB.Visible and H.InRect(dB.Position,dB.Size) then cb() end
@@ -1341,7 +1345,7 @@ function UI:Window(opts)
                     local ax=x+w-11; local ay=y+14
                     dAU.PointA=H.Vec2(ax-4,ay-1); dAU.PointB=H.Vec2(ax+4,ay-1); dAU.PointC=H.Vec2(ax,ay-6)
                     dAD.PointA=H.Vec2(ax-4,ay+1); dAD.PointB=H.Vec2(ax+4,ay+1); dAD.PointC=H.Vec2(ax,ay+6)
-                    dAU.Color=Theme.Accent; dAD.Color=Theme.Accent
+                    dAU.Color=Theme.SubText; dAD.Color=Theme.SubText
                     dAU.Visible=tv; dAD.Visible=tv
                     if tv then dAU.Transparency=_openProg; dAD.Transparency=_openProg end
 
@@ -1478,7 +1482,7 @@ function UI:Window(opts)
                     local ax=x+w-11; local ay=y+14
                     dAU.PointA=H.Vec2(ax-4,ay-1); dAU.PointB=H.Vec2(ax+4,ay-1); dAU.PointC=H.Vec2(ax,ay-6)
                     dAD.PointA=H.Vec2(ax-4,ay+1); dAD.PointB=H.Vec2(ax+4,ay+1); dAD.PointC=H.Vec2(ax,ay+6)
-                    dAU.Color=Theme.Accent; dAD.Color=Theme.Accent
+                    dAU.Color=Theme.SubText; dAD.Color=Theme.SubText
                     dAU.Visible=tv; dAD.Visible=tv
                     if tv then dAU.Transparency=_openProg; dAD.Transparency=_openProg end
 
