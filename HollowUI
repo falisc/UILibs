@@ -253,6 +253,15 @@ local Input = {
     keys = {}, keysLast = {}, keysDown = {},
 }
 function Input.Poll(tracked)
+    -- don't process any input when the Roblox window isn't focused
+    local focused = true
+    pcall(function() focused = game:GetService("GuiService").WindowFocused end)
+    if not focused then
+        Input.m1Down = false; Input.m1Up = false
+        for _, k in ipairs(tracked) do Input.keysDown[k] = false end
+        Input.m1Last = true; Input.m1 = false  -- treat as released
+        return
+    end
     Input.m1Last = Input.m1
     Input.m1     = ismouse1pressed()
     Input.m1Down = Input.m1 and not Input.m1Last
@@ -290,6 +299,8 @@ function UI:Window(opts)
     W._tabs       = {}
     W._activeTab  = nil
     W._drawings   = {}
+    W._cr         = {}  -- color role registry: { {drawing, roleKey} }
+    local function CR_(d, role) table.insert(W._cr, {d, role}) return d end
     if opts.Theme and Themes[opts.Theme] then Theme = Themes[opts.Theme] end
     W._tracked    = { W.Key, 0x1B }
     local _openProg = 0
@@ -302,38 +313,35 @@ function UI:Window(opts)
     local vp  = game:GetService("Workspace").CurrentCamera.ViewportSize
     W._pos    = H.Vec2(vp.X/2 - W.Size.X/2, vp.Y/2 - W.Size.Y/2)
 
-    local dBg   = H.Sq(10) ; dBg.Color   = Theme.Background ; W._drawings.bg   = dBg
-    local dTop  = H.Sq(11) ; dTop.Color  = Theme.TopBar      ; W._drawings.top  = dTop
-    local dTopF = H.Sq(11,true,0) ; dTopF.Color = Theme.TopBar ; W._drawings.topF = dTopF
-    local dSide = H.Sq(11,true,CR) ; dSide.Color = Theme.Sidebar ; W._drawings.side = dSide
-    local dSideTop = H.Sq(11,true,0) ; dSideTop.Color = Theme.Sidebar ; W._drawings.sideTop = dSideTop
-    local dSideB= H.Sq(12,true,0) ; dSideB.Color= Theme.Border ; W._drawings.sideB= dSideB
-    local dTtl  = H.Txt(13,Theme.TitleSize) ; dTtl.Color=Theme.Text    ; dTtl.Text=W.Title    ; W._drawings.ttl=dTtl
-    local dSub  = H.Txt(13,Theme.TitleSize-2) ; dSub.Color=Theme.SubText ; dSub.Text=W.Subtitle ; W._drawings.sub=dSub
-    local dCls  = H.Sq(13,true,CR)  ; dCls.Color = Theme.CloseBtn   ; W._drawings.cls  = dCls
-    local dCX1  = H.Ln(14,2)       ; dCX1.Color = Theme.Text        ; W._drawings.cx1  = dCX1
-    local dCX2  = H.Ln(14,2)       ; dCX2.Color = Theme.Text        ; W._drawings.cx2  = dCX2
-    local dMin    = H.Sq(13,true,CR) ; dMin.Color = Theme.MinimizeBtn ; W._drawings.min    = dMin
-    -- Double-square restore icon: back square (filled) + front square (outline via 4 lines)
-    local dMinSqB = H.Sq(14,true,2)  ; dMinSqB.Color = Theme.MinimizeBtn ; W._drawings.minSqB = dMinSqB  -- back filled
-    local dMinSqF = H.Sq(14,false,2) ; dMinSqF.Color = Theme.Text        ; W._drawings.minSqF = dMinSqF  -- front outline
-    local dMinSqBo= H.Sq(15,false,2) ; dMinBo_color = Theme.Text ; dMinSqBo.Color = Theme.Text ; W._drawings.minSqBo= dMinSqBo -- back outline
-    local dSep  = H.Ln(12,1)       ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep
+    local dBg   = H.Sq(10) ; dBg.Color   = Theme.Background ; W._drawings.bg   = dBg  ; CR_(dBg,   "Background")
+    local dTop  = H.Sq(11) ; dTop.Color  = Theme.TopBar      ; W._drawings.top  = dTop ; CR_(dTop,  "TopBar")
+    local dTopF = H.Sq(11,true,0) ; dTopF.Color = Theme.TopBar ; W._drawings.topF = dTopF ; CR_(dTopF, "TopBar")
+    local dSide = H.Sq(11,true,CR) ; dSide.Color = Theme.Sidebar ; W._drawings.side = dSide ; CR_(dSide, "Sidebar")
+    local dSideTop = H.Sq(11,true,0) ; dSideTop.Color = Theme.Sidebar ; W._drawings.sideTop = dSideTop ; CR_(dSideTop, "Sidebar")
+    local dSideB= H.Sq(12,true,0) ; dSideB.Color= Theme.Border ; W._drawings.sideB= dSideB ; CR_(dSideB, "Border")
+    local dTtl  = H.Txt(13,Theme.TitleSize) ; dTtl.Color=Theme.Text    ; dTtl.Text=W.Title    ; W._drawings.ttl=dTtl ; CR_(dTtl, "Text")
+    local dSub  = H.Txt(13,Theme.TitleSize-2) ; dSub.Color=Theme.SubText ; dSub.Text=W.Subtitle ; W._drawings.sub=dSub ; CR_(dSub, "SubText")
+    local dCls  = H.Sq(13,true,CR)  ; dCls.Color = Theme.CloseBtn   ; W._drawings.cls  = dCls ; CR_(dCls, "CloseBtn")
+    local dCX1  = H.Ln(14,2)       ; dCX1.Color = Theme.Text        ; W._drawings.cx1  = dCX1 ; CR_(dCX1, "Text")
+    local dCX2  = H.Ln(14,2)       ; dCX2.Color = Theme.Text        ; W._drawings.cx2  = dCX2 ; CR_(dCX2, "Text")
+    local dMin    = H.Sq(13,true,CR) ; dMin.Color = Theme.MinimizeBtn ; W._drawings.min    = dMin    ; CR_(dMin,    "MinimizeBtn")
+    local dMinSqB = H.Sq(14,true,2)  ; dMinSqB.Color = Theme.MinimizeBtn ; W._drawings.minSqB = dMinSqB ; CR_(dMinSqB, "MinimizeBtn")
+    local dMinSqF = H.Sq(14,false,2) ; dMinSqF.Color = Theme.Text        ; W._drawings.minSqF = dMinSqF ; CR_(dMinSqF, "Text")
+    local dMinSqBo= H.Sq(15,false,2) ; dMinBo_color = Theme.Text ; dMinSqBo.Color = Theme.Text ; W._drawings.minSqBo= dMinSqBo ; CR_(dMinSqBo, "Text")
+    local dSep  = H.Ln(12,1)       ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep ; CR_(dSep, "Border")
 
-    -- Ghost logo: body (rounded square), two eyes (circles), three skirt triangles
-    local dGhostBody  = H.Sq(13,true,8)  ; dGhostBody.Color  = Theme.Accent  ; W._drawings.ghostBody  = dGhostBody
-    local dGhostEyeL  = H.Circ(14)       ; dGhostEyeL.Color  = Theme.TopBar  ; dGhostEyeL.NumSides=20 ; dGhostEyeL.Radius=2.5 ; W._drawings.ghostEyeL  = dGhostEyeL
-    local dGhostEyeR  = H.Circ(14)       ; dGhostEyeR.Color  = Theme.TopBar  ; dGhostEyeR.NumSides=20 ; dGhostEyeR.Radius=2.5 ; W._drawings.ghostEyeR  = dGhostEyeR
-    -- Three bottom triangles cut into the skirt (TopBar color to fake cutouts)
-    local dGhostSkL   = Drawing.new("Triangle") ; dGhostSkL.Filled=true ; dGhostSkL.Color=Theme.TopBar ; dGhostSkL.ZIndex=14 ; dGhostSkL.Visible=false ; W._drawings.ghostSkL = dGhostSkL
-    local dGhostSkM   = Drawing.new("Triangle") ; dGhostSkM.Filled=true ; dGhostSkM.Color=Theme.TopBar ; dGhostSkM.ZIndex=14 ; dGhostSkM.Visible=false ; W._drawings.ghostSkM = dGhostSkM
-    local dGhostSkR   = Drawing.new("Triangle") ; dGhostSkR.Filled=true ; dGhostSkR.Color=Theme.TopBar ; dGhostSkR.ZIndex=14 ; dGhostSkR.Visible=false ; W._drawings.ghostSkR = dGhostSkR
+    local dGhostBody  = H.Sq(13,true,8)  ; dGhostBody.Color  = Theme.Accent  ; W._drawings.ghostBody  = dGhostBody ; CR_(dGhostBody, "Accent")
+    local dGhostEyeL  = H.Circ(14)       ; dGhostEyeL.Color  = Theme.TopBar  ; dGhostEyeL.NumSides=20 ; dGhostEyeL.Radius=2.5 ; W._drawings.ghostEyeL  = dGhostEyeL ; CR_(dGhostEyeL, "TopBar")
+    local dGhostEyeR  = H.Circ(14)       ; dGhostEyeR.Color  = Theme.TopBar  ; dGhostEyeR.NumSides=20 ; dGhostEyeR.Radius=2.5 ; W._drawings.ghostEyeR  = dGhostEyeR ; CR_(dGhostEyeR, "TopBar")
+    local dGhostSkL   = Drawing.new("Triangle") ; dGhostSkL.Filled=true ; dGhostSkL.Color=Theme.TopBar ; dGhostSkL.ZIndex=14 ; dGhostSkL.Visible=false ; W._drawings.ghostSkL = dGhostSkL ; CR_(dGhostSkL, "TopBar")
+    local dGhostSkM   = Drawing.new("Triangle") ; dGhostSkM.Filled=true ; dGhostSkM.Color=Theme.TopBar ; dGhostSkM.ZIndex=14 ; dGhostSkM.Visible=false ; W._drawings.ghostSkM = dGhostSkM ; CR_(dGhostSkM, "TopBar")
+    local dGhostSkR   = Drawing.new("Triangle") ; dGhostSkR.Filled=true ; dGhostSkR.Color=Theme.TopBar ; dGhostSkR.ZIndex=14 ; dGhostSkR.Visible=false ; W._drawings.ghostSkR = dGhostSkR ; CR_(dGhostSkR, "TopBar")
 
-    local dPlrBg      = H.Sq(12,true,CR) ; dPlrBg.Color = Theme.TabActive ; W._drawings.plrBg      = dPlrBg
-    local dPlrBgFix   = H.Sq(12,true,0)  ; dPlrBgFix.Color = Theme.TabActive ; W._drawings.plrBgFix   = dPlrBgFix
-    local dPlrBgFixBR = H.Sq(12,true,0)  ; dPlrBgFixBR.Color = Theme.TabActive ; W._drawings.plrBgFixBR = dPlrBgFixBR
-    local dPlrIcon    = H.Sq(13,true,CR)  ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon
-    local dPlrInitial = H.Txt(14,12)                ; dPlrInitial.Color = Theme.Text   ; W._drawings.plrInitial = dPlrInitial
+    local dPlrBg      = H.Sq(12,true,CR) ; dPlrBg.Color = Theme.TabActive ; W._drawings.plrBg      = dPlrBg      ; CR_(dPlrBg,      "TabActive")
+    local dPlrBgFix   = H.Sq(12,true,0)  ; dPlrBgFix.Color = Theme.TabActive ; W._drawings.plrBgFix   = dPlrBgFix   ; CR_(dPlrBgFix,   "TabActive")
+    local dPlrBgFixBR = H.Sq(12,true,0)  ; dPlrBgFixBR.Color = Theme.TabActive ; W._drawings.plrBgFixBR = dPlrBgFixBR ; CR_(dPlrBgFixBR, "TabActive")
+    local dPlrIcon    = H.Sq(13,true,CR)  ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon    ; CR_(dPlrIcon,    "Accent")
+    local dPlrInitial = H.Txt(14,12)      ; dPlrInitial.Color = Theme.Text   ; W._drawings.plrInitial = dPlrInitial ; CR_(dPlrInitial, "Text")
 
     -- Avatar pixel squares (loaded async from luard API)
     local _avatarPixels = {}   -- list of {sq, rx, ry} where rx/ry are 0..1 relative positions
@@ -565,8 +573,8 @@ function UI:Window(opts)
         end
     end
 
-    local dCsbTrack = H.Sq(19,true,3) ; dCsbTrack.Color = Theme.SliderBg ; W._drawings.csbTrack = dCsbTrack
-    local dCsbThumb = H.Sq(20,true,3) ; dCsbThumb.Color = Theme.Accent   ; W._drawings.csbThumb = dCsbThumb
+    local dCsbTrack = H.Sq(19,true,3) ; dCsbTrack.Color = Theme.SliderBg ; W._drawings.csbTrack = dCsbTrack ; CR_(dCsbTrack, "SliderBg")
+    local dCsbThumb = H.Sq(20,true,3) ; dCsbThumb.Color = Theme.Accent   ; W._drawings.csbThumb = dCsbThumb ; CR_(dCsbThumb, "Accent")
     W._csbDrag   = false
     W._csbTrackY = 0
     W._csbTrackH = 0
@@ -792,7 +800,7 @@ function UI:Window(opts)
         for _, tab in ipairs(W._tabs) do
             for _, s in ipairs(tab._sections) do
                 for _, wg in ipairs(s._widgets) do
-                    if wg._changing then anyChanging = true end
+                    if wg._changing or wg._typing then anyChanging = true end
                 end
             end
         end
@@ -931,9 +939,11 @@ function UI:Window(opts)
     function W:SetTheme(name)
         if not name or not Themes[name] then return end
         Theme = Themes[name]
-        -- re-tint all static window drawings that cache theme colors at creation
-        -- (most drawings re-read Theme.X every frame in _draw, so just updating
-        --  Theme is enough — only the topbar/sidebar bg need explicit refresh)
+        -- repaint every drawing registered with a color role
+        for _, entry in ipairs(W._cr) do
+            local d, role = entry[1], entry[2]
+            pcall(function() d.Color = Theme[role] end)
+        end
     end
 
     function W:ThemeDropdown(section, title)
@@ -954,9 +964,9 @@ function UI:Window(opts)
         local T = { _title=opts.Title or "Tab", _window=W, _sections={}, _drawings={}, _pc=0 }
         T._rect = { pos=H.Vec2(0,0), size=H.Vec2(0,0) }
 
-        local dB = H.Sq(12,true,CR) ; dB.Color = Theme.Sidebar ; T._drawings.b = dB
-        local dT = H.Txt(13,16)   ; dT.Color = Theme.SubText ; dT.Text = T._title ; T._drawings.t = dT
-        local dI = H.Sq(13,true,2)            ; dI.Color = Theme.Accent  ; T._drawings.i = dI
+        local dB = H.Sq(12,true,CR) ; dB.Color = Theme.Sidebar ; T._drawings.b = dB ; CR_(dB, "Sidebar")
+        local dT = H.Txt(13,16)   ; dT.Color = Theme.SubText ; dT.Text = T._title ; T._drawings.t = dT ; CR_(dT, "SubText")
+        local dI = H.Sq(13,true,2)            ; dI.Color = Theme.Accent  ; T._drawings.i = dI ; CR_(dI, "Accent")
 
         T._draw = function(tabY, vis, fade)
             local wp  = W._pos
@@ -994,12 +1004,11 @@ function UI:Window(opts)
             so = so or {}
             local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil, _collapsed=so.Collapsed == true }
 
-            local dBs = H.Sq(14)      ; dBs.Color = Theme.Section       ; S._drawings.bs = dBs
-            local dHd = H.Sq(15)      ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd
-            local dHf = H.Sq(15,true,0) ; dHf.Color = Theme.SectionHeader ; S._drawings.hf = dHf
-            local dSt = H.Txt(16,12)  ; dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt
-            -- Collapse toggle button in section header
-            local dCb = Drawing.new("Triangle") ; dCb.Color = Theme.SubText ; dCb.Filled = true ; dCb.Visible = false ; dCb.ZIndex = 16 ; S._drawings.cb = dCb
+            local dBs = H.Sq(14)      ; dBs.Color = Theme.Section       ; S._drawings.bs = dBs ; CR_(dBs, "Section")
+            local dHd = H.Sq(15)      ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd ; CR_(dHd, "SectionHeader")
+            local dHf = H.Sq(15,true,0) ; dHf.Color = Theme.SectionHeader ; S._drawings.hf = dHf ; CR_(dHf, "SectionHeader")
+            local dSt = H.Txt(16,12)  ; dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt ; CR_(dSt, "SubText")
+            local dCb = Drawing.new("Triangle") ; dCb.Color = Theme.SubText ; dCb.Filled = true ; dCb.Visible = false ; dCb.ZIndex = 16 ; S._drawings.cb = dCb ; CR_(dCb, "SubText")
             -- Hit rect for collapse button
             local _cbRect = {pos=H.Vec2(0,0), size=H.Vec2(16,16)}
 
@@ -1123,10 +1132,10 @@ function UI:Window(opts)
             function S:Button(wo, cb)
                 wo=wo or {}; cb=cb or function() end
                 local wg = { _drawings={}, _h=30, _title=wo.Title or "Button" }
-                local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
-                local dT=H.Txt(18); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
-                local dA1=H.Ln(18,1.5); dA1.Color=Theme.SubText ; wg._drawings.a1=dA1
-                local dA2=H.Ln(18,1.5); dA2.Color=Theme.SubText ; wg._drawings.a2=dA2
+                local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB ; CR_(dB, "TabActive")
+                local dT=H.Txt(18); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT ; CR_(dT, "Text")
+                local dA1=H.Ln(18,1.5); dA1.Color=Theme.SubText ; wg._drawings.a1=dA1 ; CR_(dA1, "SubText")
+                local dA2=H.Ln(18,1.5); dA2.Color=Theme.SubText ; wg._drawings.a2=dA2 ; CR_(dA2, "SubText")
                 wg._upd = function(x,y,w,ct,cbot)
                     local vis=H.InClip(y,26,ct,cbot)
                     local bTop=ct and math.max(y,ct) or y
@@ -1154,11 +1163,11 @@ function UI:Window(opts)
             function S:Toggle(wo, cb)
                 wo=wo or {}; cb=cb or function() end
                 local wg = { _drawings={}, _h=30, _value=wo.Default or false, _title=wo.Title or "Toggle" }
-                local dT=H.Txt(17); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
+                local dT=H.Txt(17); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT ; CR_(dT, "Text")
                 local dTr=H.Sq(17,true,9) ; wg._drawings.tr=dTr
                 local dK=H.Circ(18); dK.Color=Color3.fromRGB(255,255,255); dK.NumSides=30; dK.Radius=7 ; wg._drawings.k=dK
-                local dKb=H.Sq(17,true,4); dKb.Color=Theme.TabActive ; wg._drawings.kb=dKb
-                local dKt=H.Txt(18,10);    dKt.Color=Theme.SubText   ; wg._drawings.kt=dKt
+                local dKb=H.Sq(17,true,4); dKb.Color=Theme.TabActive ; wg._drawings.kb=dKb ; CR_(dKb, "TabActive")
+                local dKt=H.Txt(18,10);    dKt.Color=Theme.SubText   ; wg._drawings.kt=dKt ; CR_(dKt, "SubText")
                 local _key=wo.Key or nil; local _changing=false; local _changeT=0
                 if _key then table.insert(W._tracked, _key) end
                 local _prog = wg._value and 1 or 0
@@ -1211,6 +1220,7 @@ function UI:Window(opts)
                     if _changing then
                         if (os.clock()-_changeT)<0.15 then return end
                         if iskeypressed(0x1B) then _changing=false; _key=nil; return end
+                        if iskeypressed(0x08) then _changing=false; _key=nil; return end
                         for _,k in ipairs(ALL_KEYS) do
                             if iskeypressed(k) then
                                 _key=k; table.insert(W._tracked,k)
@@ -1231,66 +1241,86 @@ function UI:Window(opts)
                 local wg = { _drawings={}, _h=46, _sliding=false,
                     _min=wo.Min or 0, _max=wo.Max or 100, _step=wo.Step or 1,
                     _suffix=wo.Suffix or "", _title=wo.Title or "Slider",
-                    _tp=H.Vec2(0,0), _ts=H.Vec2(0,0)
+                    _tp=H.Vec2(0,0), _ts=H.Vec2(0,0),
+                    _typing=false, _typeStr="", _typeRect={pos=H.Vec2(0,0),size=H.Vec2(0,0)}
                 }
                 wg._value = wo.Default or wg._min
 
-                -- Title label (left)
-                local dTt=H.Txt(17); dTt.Color=Theme.Text; dTt.Text=wg._title ; wg._drawings.tt=dTt
-                -- Value label (right, accent colored)
-                local dVl=H.Txt(17,11); dVl.Color=Theme.Accent ; wg._drawings.vl=dVl
-                -- Track background: thin, full width
-                local dTr=H.Sq(17,true,4); dTr.Color=Theme.SliderBg ; wg._drawings.tr=dTr
-                -- Fill: same height, accent color
-                local dFl=H.Sq(18,true,4); dFl.Color=Theme.SliderFill ; wg._drawings.fl=dFl
-                -- Thumb: circle knob sitting on track
-                local dTh=H.Circ(19); dTh.Color=Theme.Text; dTh.NumSides=24; dTh.Radius=5; dTh.Filled=true ; wg._drawings.th=dTh
-                -- Thumb inner dot: accent color
-                local dTi=H.Circ(20); dTi.Color=Theme.Accent; dTi.NumSides=24; dTi.Radius=2; dTi.Filled=true ; wg._drawings.ti=dTi
+                local dTt=H.Txt(17); dTt.Color=Theme.Text; dTt.Text=wg._title ; wg._drawings.tt=dTt ; CR_(dTt, "Text")
+                -- Value box bg
+                local dVb=H.Sq(17,true,4); dVb.Color=Theme.TabActive ; wg._drawings.vb=dVb ; CR_(dVb, "TabActive")
+                -- Value label inside box
+                local dVl=H.Txt(18,11); dVl.Color=Theme.Text ; wg._drawings.vl=dVl ; CR_(dVl, "Text")
+                -- Cursor blink line when typing
+                local dVc=H.Ln(19,1.5); dVc.Color=Theme.Accent ; wg._drawings.vc=dVc ; CR_(dVc, "Accent")
+                -- Track
+                local dTr=H.Sq(17,true,4); dTr.Color=Theme.SliderBg ; wg._drawings.tr=dTr ; CR_(dTr, "SliderBg")
+                -- Fill
+                local dFl=H.Sq(18,true,4); dFl.Color=Theme.SliderFill ; wg._drawings.fl=dFl ; CR_(dFl, "SliderFill")
+                -- Thumb
+                local dTh=H.Circ(19); dTh.Color=Theme.Text; dTh.NumSides=24; dTh.Radius=5; dTh.Filled=true ; wg._drawings.th=dTh ; CR_(dTh, "Text")
+                local dTi=H.Circ(20); dTi.Color=Theme.Accent; dTi.NumSides=24; dTi.Radius=2; dTi.Filled=true ; wg._drawings.ti=dTi ; CR_(dTi, "Accent")
 
-                local function calc(mx)
-                    local pct = math.clamp((mx-wg._tp.X)/wg._ts.X, 0, 1)
-                    local raw = wg._min + (wg._max-wg._min)*pct
-                    local st  = math.floor(raw/wg._step+0.5)*wg._step
+                local function clampVal(n)
+                    local st = math.floor(n/wg._step+0.5)*wg._step
                     local fmt = "%."..math.max(0,-math.floor(math.log10(wg._step+0.0001))).."f"
                     return tonumber(string.format(fmt, math.clamp(st, wg._min, wg._max)))
                 end
+                local function calc(mx)
+                    local pct = math.clamp((mx-wg._tp.X)/wg._ts.X, 0, 1)
+                    return clampVal(wg._min + (wg._max-wg._min)*pct)
+                end
 
+                local _vbW = 38; local _vbH = 18
                 wg._upd = function(x,y,w,ct,cbot)
-                    -- Title top-left only
                     local tv=H.TxtClip(y+1,Theme.FontSize,ct,cbot)
                     dTt.Position=H.Vec2(x,y+1); dTt.Visible=tv
                     if tv then dTt.Transparency=_openProg end
 
-                    -- Track: 14px tall so value text fits inside
-                    local ty = y + 20
-                    local th = 14
-                    wg._tp=H.Vec2(x,ty); wg._ts=H.Vec2(w,th)
-                    local trv=H.InClip(ty,th+10,ct,cbot)
-                    dTr.Position=H.Vec2(x,ty); dTr.Size=H.Vec2(w,th); dTr.Visible=trv
+                    -- Value box: top-right, small pill
+                    local vbX = x+w-_vbW; local vbY = y
+                    wg._typeRect.pos=H.Vec2(vbX,vbY); wg._typeRect.size=H.Vec2(_vbW,_vbH)
+                    dVb.Position=H.Vec2(vbX,vbY); dVb.Size=H.Vec2(_vbW,_vbH)
+                    dVb.Color = wg._typing and Theme.Section or Theme.TabActive
+                    dVb.Visible=tv; if tv then dVb.Transparency=_openProg end
+
+                    local vt = wg._typing and (wg._typeStr) or (tostring(wg._value)..wg._suffix)
+                    dVl.Text=vt; dVl.Size=11; dVl.Color=Theme.Text
+                    dVl.Position=H.Vec2(vbX+_vbW/2-#vt*3.2, vbY+3); dVl.Visible=tv
+                    if tv then dVl.Transparency=_openProg end
+
+                    -- Blinking cursor when typing
+                    local showCursor = wg._typing and (math.floor(os.clock()*2)%2==0)
+                    if showCursor then
+                        local cx = vbX+_vbW/2+#vt*3.2+1
+                        dVc.From=H.Vec2(cx,vbY+3); dVc.To=H.Vec2(cx,vbY+_vbH-3)
+                        dVc.Visible=tv
+                    else dVc.Visible=false end
+
+                    -- Track
+                    local ty2 = y+22; local th=14
+                    local trackW = w  -- full width, value box floats above
+                    wg._tp=H.Vec2(x,ty2); wg._ts=H.Vec2(trackW,th)
+                    local trv=H.InClip(ty2,th+10,ct,cbot)
+                    dTr.Position=H.Vec2(x,ty2); dTr.Size=H.Vec2(trackW,th); dTr.Visible=trv
                     if trv then dTr.Transparency=_openProg end
 
-                    -- Fill
                     local pct=math.clamp((wg._value-wg._min)/(wg._max-wg._min),0,1)
-                    local fillW = math.max(th, w*pct)
-                    dFl.Position=H.Vec2(x,ty); dFl.Size=H.Vec2(fillW,th); dFl.Visible=trv
+                    local fillW=math.max(th,trackW*pct)
+                    dFl.Position=H.Vec2(x,ty2); dFl.Size=H.Vec2(fillW,th); dFl.Visible=trv
                     if trv then dFl.Transparency=_openProg end
 
-                    -- Thumb knob on fill end
-                    local knobX = x + fillW
-                    local knobY = ty + th/2
-                    dTh.Position=H.Vec2(knobX, knobY); dTh.Visible=trv
-                    dTi.Position=H.Vec2(knobX, knobY); dTi.Visible=trv
+                    dTh.Radius=8; dTh.Position=H.Vec2(x+fillW,ty2+th/2); dTh.Visible=trv
+                    dTi.Radius=3; dTi.Position=H.Vec2(x+fillW,ty2+th/2); dTi.Visible=trv
                     if trv then dTh.Transparency=_openProg; dTi.Transparency=_openProg end
-
-                    -- Value: large, centered inside track
-                    local vt=tostring(wg._value)..wg._suffix
-                    dVl.Text=vt; dVl.Size=11; dVl.Color=Theme.Text
-                    dVl.Position=H.Vec2(x + w/2 - #vt*3.2, ty+1); dVl.Visible=trv
-                    if trv then dVl.Transparency=_openProg end
                 end
                 wg._click = function()
-                    if dTr.Visible and H.InRect(wg._tp, H.Vec2(wg._ts.X, wg._ts.Y+10)) then
+                    -- click value box -> enter typing mode
+                    if dVb.Visible and H.InRect(wg._typeRect.pos, wg._typeRect.size) then
+                        wg._typing=true; wg._typeStr=""; return
+                    end
+                    -- click track -> slide
+                    if not wg._typing and dTr.Visible and H.InRect(wg._tp, H.Vec2(wg._ts.X, wg._ts.Y+10)) then
                         wg._sliding=true
                         local v=calc(Mouse.X); if v~=wg._value then wg._value=v; cb(v) end
                     end
@@ -1301,10 +1331,66 @@ function UI:Window(opts)
                     end
                 end
                 wg._release = function() wg._sliding=false end
+                wg._poll = function()
+                    if not wg._typing then return end
+                    -- digits 0-9
+                    local digitKeys = {
+                        [0x30]=0,[0x31]=1,[0x32]=2,[0x33]=3,[0x34]=4,
+                        [0x35]=5,[0x36]=6,[0x37]=7,[0x38]=8,[0x39]=9,
+                        -- numpad
+                        [0x60]=0,[0x61]=1,[0x62]=2,[0x63]=3,[0x64]=4,
+                        [0x65]=5,[0x66]=6,[0x67]=7,[0x68]=8,[0x69]=9,
+                    }
+                    for k,d in pairs(digitKeys) do
+                        if Input.keysDown[k] then
+                            if not table.find(W._tracked,k) then table.insert(W._tracked,k) end
+                            if #wg._typeStr < 6 then wg._typeStr = wg._typeStr..tostring(d) end
+                            return
+                        end
+                    end
+                    -- decimal point
+                    if Input.keysDown[0xBE] or Input.keysDown[0x6E] then
+                        if not string.find(wg._typeStr,"%.") then wg._typeStr=wg._typeStr.."." end
+                        return
+                    end
+                    -- minus/negative
+                    if Input.keysDown[0xBD] or Input.keysDown[0x6D] then
+                        if wg._typeStr=="" then wg._typeStr="-" end
+                        return
+                    end
+                    -- backspace: delete last char
+                    if Input.keysDown[0x08] then
+                        wg._typeStr = string.sub(wg._typeStr,1,#wg._typeStr-1)
+                        return
+                    end
+                    -- enter: commit
+                    if Input.keysDown[0x0D] then
+                        local n = tonumber(wg._typeStr)
+                        if n then wg._value=clampVal(n); cb(wg._value) end
+                        wg._typing=false; wg._typeStr=""
+                        return
+                    end
+                    -- escape: cancel
+                    if Input.keysDown[0x1B] then
+                        wg._typing=false; wg._typeStr=""; return
+                    end
+                    -- click outside: commit
+                    if Input.m1Down then
+                        local n = tonumber(wg._typeStr)
+                        if n then wg._value=clampVal(n); cb(wg._value) end
+                        wg._typing=false; wg._typeStr=""
+                    end
+                end
+                -- register digit keys in tracked
+                for _,k in ipairs({0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,
+                    0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,
+                    0x0D,0x08,0xBE,0xBD,0x6E,0x6D}) do
+                    if not table.find(W._tracked,k) then table.insert(W._tracked,k) end
+                end
                 table.insert(S._widgets, wg)
                 local r={}
                 function r:Get() return wg._value end
-                function r:Set(n) wg._value=math.clamp(n,wg._min,wg._max); cb(wg._value) end
+                function r:Set(n) wg._value=clampVal(n); cb(wg._value) end
                 return r
             end
 
@@ -1316,13 +1402,13 @@ function UI:Window(opts)
                     _title=wo.Title or "Dropdown", _options=wo.Options or {}, _xd={},
                     _listX=0, _listY=0, _listH=0, _trackX=0, _trackY=0, _trackH=0 }
                 wg._value = wo.Default or wg._options[1]
-                local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
-                local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
-                local dAU=Drawing.new("Triangle"); dAU.Filled=true; dAU.Color=Theme.SubText; dAU.ZIndex=18; dAU.Visible=false ; wg._drawings.au=dAU
-                local dAD=Drawing.new("Triangle"); dAD.Filled=true; dAD.Color=Theme.SubText; dAD.ZIndex=18; dAD.Visible=false ; wg._drawings.ad=dAD
-                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.SectionHeader ; wg._drawings.lc=dLC
-                local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack
-                local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
+                local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB ; CR_(dB, "TabActive")
+                local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT ; CR_(dT, "Text")
+                local dAU=Drawing.new("Triangle"); dAU.Filled=true; dAU.Color=Theme.SubText; dAU.ZIndex=18; dAU.Visible=false ; wg._drawings.au=dAU ; CR_(dAU, "SubText")
+                local dAD=Drawing.new("Triangle"); dAD.Filled=true; dAD.Color=Theme.SubText; dAD.ZIndex=18; dAD.Visible=false ; wg._drawings.ad=dAD ; CR_(dAD, "SubText")
+                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.SectionHeader ; wg._drawings.lc=dLC ; CR_(dLC, "SectionHeader")
+                local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack ; CR_(dSbTrack, "SliderBg")
+                local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb ; CR_(dSbThumb, "Accent")
                 local od={}
                 for i=1,MAX_ROWS do
                     local ob=H.Sq(20,true,2); ob.Color=Theme.Accent  -- subtle bg, only shown when selected
@@ -1449,13 +1535,13 @@ function UI:Window(opts)
                     _title=wo.Title or "MultiDropdown", _options=wo.Options or {}, _xd={},
                     _listX=0, _listY=0, _listH=0, _trackX=0, _trackY=0, _trackH=0 }
                 wg._value = wo.Default or {}
-                local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
-                local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
-                local dAU=Drawing.new("Triangle"); dAU.Filled=true; dAU.Color=Theme.SubText; dAU.ZIndex=18; dAU.Visible=false ; wg._drawings.au=dAU
-                local dAD=Drawing.new("Triangle"); dAD.Filled=true; dAD.Color=Theme.SubText; dAD.ZIndex=18; dAD.Visible=false ; wg._drawings.ad=dAD
-                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.SectionHeader ; wg._drawings.lc=dLC
-                local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack
-                local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
+                local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB ; CR_(dB, "TabActive")
+                local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT ; CR_(dT, "Text")
+                local dAU=Drawing.new("Triangle"); dAU.Filled=true; dAU.Color=Theme.SubText; dAU.ZIndex=18; dAU.Visible=false ; wg._drawings.au=dAU ; CR_(dAU, "SubText")
+                local dAD=Drawing.new("Triangle"); dAD.Filled=true; dAD.Color=Theme.SubText; dAD.ZIndex=18; dAD.Visible=false ; wg._drawings.ad=dAD ; CR_(dAD, "SubText")
+                local dLC=H.Sq(19,true,CR); dLC.Color=Theme.SectionHeader ; wg._drawings.lc=dLC ; CR_(dLC, "SectionHeader")
+                local dSbTrack=H.Sq(20,true,3); dSbTrack.Color=Theme.SliderBg ; wg._drawings.sbt=dSbTrack ; CR_(dSbTrack, "SliderBg")
+                local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb ; CR_(dSbThumb, "Accent")
                 local od={}
                 for i=1,MAX_ROWS do
                     local ob=H.Sq(20,true,2); ob.Color=Theme.Accent
@@ -1586,9 +1672,9 @@ function UI:Window(opts)
             function S:Keybind(wo, onPress, onChanged)
                 wo=wo or {}; onPress=onPress or function() end; onChanged=onChanged or function() end
                 local wg = { _drawings={}, _h=30, _key=wo.Key or nil, _changing=false, _changeT=0 }
-                local dTt=H.Txt(17); dTt.Color=Theme.Text; dTt.Text=wo.Title or "Keybind" ; wg._drawings.tt=dTt
-                local dKb=H.Sq(17,true,4); dKb.Color=Theme.TabActive ; wg._drawings.kb=dKb
-                local dKt=H.Txt(18,11); dKt.Color=Theme.Text ; wg._drawings.kt=dKt
+                local dTt=H.Txt(17); dTt.Color=Theme.Text; dTt.Text=wo.Title or "Keybind" ; wg._drawings.tt=dTt ; CR_(dTt, "Text")
+                local dKb=H.Sq(17,true,4); dKb.Color=Theme.TabActive ; wg._drawings.kb=dKb ; CR_(dKb, "TabActive")
+                local dKt=H.Txt(18,11); dKt.Color=Theme.Text ; wg._drawings.kt=dKt ; CR_(dKt, "Text")
                 if wg._key then table.insert(W._tracked, wg._key) end
                 wg._upd = function(x,y,w,ct,cbot)
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cbot)
@@ -1611,6 +1697,7 @@ function UI:Window(opts)
                     if wg._changing then
                         if (os.clock()-wg._changeT) < 0.15 then return end
                         if iskeypressed(0x1B) then wg._changing=false; wg._key=nil; onChanged(nil); return end
+                        if iskeypressed(0x08) then wg._changing=false; wg._key=nil; onChanged(nil); return end
                         for _, k in ipairs(ALL_KEYS) do
                             if iskeypressed(k) then
                                 wg._changing=false; wg._key=k
