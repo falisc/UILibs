@@ -248,32 +248,25 @@ local ALL_KEYS = {
     0xA0,0xA1,0xA2,0xA3,0x1B,0x20,0x0D,
 }
 
+local UIS = game:GetService("UserInputService")
+
 local Input = {
     m1 = false, m1Last = false, m1Down = false, m1Up = false,
     keys = {}, keysLast = {}, keysDown = {},
 }
 
-function Input.Poll(tracked)
-    -- isgameactive() returns false when Roblox window isn't focused
-    local active = true
-    pcall(function() active = isgameactive() end)
-
-    if not active then
-        -- release everything cleanly so held states don't stick
-        if Input.m1 then Input.m1Up = true else Input.m1Up = false end
-        Input.m1 = false; Input.m1Down = false
-        for _, k in ipairs(tracked) do
-            Input.keysLast[k] = Input.keys[k]
-            Input.keys[k]     = false
-            Input.keysDown[k] = false
-        end
-        return
+UIS.InputBegan:Connect(function(inp)
+    if inp.KeyCode == Enum.KeyCode.MouseButton1 then
+        Input.m1 = true; Input.m1Down = true
     end
+end)
+UIS.InputEnded:Connect(function(inp)
+    if inp.KeyCode == Enum.KeyCode.MouseButton1 then
+        Input.m1 = false; Input.m1Up = true
+    end
+end)
 
-    Input.m1Last = Input.m1
-    Input.m1     = ismouse1pressed()
-    Input.m1Down = Input.m1 and not Input.m1Last
-    Input.m1Up   = not Input.m1 and Input.m1Last
+function Input.Poll(tracked)
     local seen = {}
     for _, k in ipairs(tracked) do
         if not seen[k] then
@@ -285,7 +278,10 @@ function Input.Poll(tracked)
     end
 end
 
-function Input.ClearFrameFlags() end -- no-op, flags cleared by polling
+function Input.ClearFrameFlags()
+    Input.m1Down = false
+    Input.m1Up   = false
+end
 
 -- ============================================================
 UI = {}
