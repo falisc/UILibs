@@ -950,6 +950,8 @@ function UI:Window(opts)
             self:SetTheme(v)
         end)
     end
+
+    function W:Tab(opts)
         opts = opts or {}
         local T = { _title=opts.Title or "Tab", _window=W, _sections={}, _drawings={}, _pc=0 }
         T._rect = { pos=H.Vec2(0,0), size=H.Vec2(0,0) }
