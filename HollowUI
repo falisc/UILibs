@@ -313,12 +313,7 @@ function UI:Window(opts)
     W._cr         = {}  -- color role registry: { {drawing, roleKey} }
     local function CR_(d, role) table.insert(W._cr, {d, role}) return d end
     if opts.Theme and Themes[opts.Theme] then Theme = Themes[opts.Theme] end
-    W._tracked    = { W.Key, 0x1B,
-        -- digit keys for slider typing
-        0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,
-        0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,
-        0x0D,0x08,0xBE,0xBD,0x6E,0x6D,
-    }
+    W._tracked    = { W.Key, 0x1B }
     local _openProg = 0
     local _minProg  = 1
 
@@ -1293,22 +1288,23 @@ function UI:Window(opts)
                     return clampVal(wg._min + (wg._max-wg._min)*pct)
                 end
 
-                local _vbW = 38; local _vbH = 18
+                local _vbH = 18
                 wg._upd = function(x,y,w,ct,cbot)
                     local tv=H.TxtClip(y+1,Theme.FontSize,ct,cbot)
                     dTt.Position=H.Vec2(x,y+1); dTt.Visible=tv
                     if tv then dTt.Transparency=_openProg end
 
-                    -- Value box: top-right, small pill
+                    -- Value box: auto-width based on text
+                    local vt = wg._typing and (wg._typeStr ~= "" and wg._typeStr or "_") or (tostring(wg._value)..wg._suffix)
+                    local _vbW = math.max(28, #vt * 6.5 + 12)
                     local vbX = x+w-_vbW; local vbY = y
                     wg._typeRect.pos=H.Vec2(vbX,vbY); wg._typeRect.size=H.Vec2(_vbW,_vbH)
                     dVb.Position=H.Vec2(vbX,vbY); dVb.Size=H.Vec2(_vbW,_vbH)
                     dVb.Color = wg._typing and Theme.Section or Theme.TabActive
                     dVb.Visible=tv; if tv then dVb.Transparency=_openProg end
 
-                    local vt = wg._typing and (wg._typeStr) or (tostring(wg._value)..wg._suffix)
                     dVl.Text=vt; dVl.Size=11; dVl.Color=Theme.Text
-                    dVl.Position=H.Vec2(vbX+_vbW/2-#vt*3.2, vbY+3); dVl.Visible=tv
+                    dVl.Position=H.Vec2(vbX + _vbW/2 - #vt*3.2, vbY+3); dVl.Visible=tv
                     if tv then dVl.Transparency=_openProg end
 
                     -- Blinking cursor when typing
@@ -1355,60 +1351,53 @@ function UI:Window(opts)
                 wg._release = function() wg._sliding=false end
                 wg._poll = function()
                     if not wg._typing then return end
-                    -- digits 0-9
-                    local digitKeys = {
-                        [0x30]=0,[0x31]=1,[0x32]=2,[0x33]=3,[0x34]=4,
-                        [0x35]=5,[0x36]=6,[0x37]=7,[0x38]=8,[0x39]=9,
-                        -- numpad
-                        [0x60]=0,[0x61]=1,[0x62]=2,[0x63]=3,[0x64]=4,
-                        [0x65]=5,[0x66]=6,[0x67]=7,[0x68]=8,[0x69]=9,
-                    }
-                    for k,d in pairs(digitKeys) do
-                        if Input.keysDown[k] then
-                            if not table.find(W._tracked,k) then table.insert(W._tracked,k) end
-                            if #wg._typeStr < 6 then wg._typeStr = wg._typeStr..tostring(d) end
-                            return
-                        end
+                    if Input.m1Down and not H.InRect(wg._typeRect.pos, wg._typeRect.size) then
+                        local n = tonumber(wg._typeStr)
+                        if n then wg._value=clampVal(n); cb(wg._value) end
+                        wg._typing=false; wg._typeStr=""
                     end
-                    -- decimal point
-                    if Input.keysDown[0xBE] or Input.keysDown[0x6E] then
+                end
+                -- UIS connection for slider typing input (focus-gated)
+                local _slConn; _slConn = UIS.InputBegan:Connect(function(inp)
+                    if not wg._typing then return end
+                    local k = inp.KeyCode
+                    local kn = k.Name
+                    -- digits
+                    local digit = kn:match("^(%d)$") or kn:match("^KeypadNum(%d)$") or kn:match("^Zero$") and "0"
+                    -- map KeyCode names to digits
+                    local nameToDigit = {
+                        Zero="0",One="1",Two="2",Three="3",Four="4",
+                        Five="5",Six="6",Seven="7",Eight="8",Nine="9",
+                        KeypadZero="0",KeypadOne="1",KeypadTwo="2",KeypadThree="3",KeypadFour="4",
+                        KeypadFive="5",KeypadSix="6",KeypadSeven="7",KeypadEight="8",KeypadNine="9",
+                    }
+                    if nameToDigit[kn] then
+                        if #wg._typeStr < 8 then wg._typeStr = wg._typeStr..nameToDigit[kn] end
+                        return
+                    end
+                    if kn == "Period" or kn == "KeypadPeriod" then
                         if not string.find(wg._typeStr,"%.") then wg._typeStr=wg._typeStr.."." end
                         return
                     end
-                    -- minus/negative
-                    if Input.keysDown[0xBD] or Input.keysDown[0x6D] then
+                    if kn == "Minus" or kn == "KeypadMinus" then
                         if wg._typeStr=="" then wg._typeStr="-" end
                         return
                     end
-                    -- backspace: delete last char
-                    if Input.keysDown[0x08] then
+                    if kn == "Backspace" then
                         wg._typeStr = string.sub(wg._typeStr,1,#wg._typeStr-1)
                         return
                     end
-                    -- enter: commit
-                    if Input.keysDown[0x0D] then
+                    if kn == "Return" or kn == "KeypadEnter" then
                         local n = tonumber(wg._typeStr)
                         if n then wg._value=clampVal(n); cb(wg._value) end
                         wg._typing=false; wg._typeStr=""
                         return
                     end
-                    -- escape: cancel
-                    if Input.keysDown[0x1B] then
+                    if kn == "Escape" then
                         wg._typing=false; wg._typeStr=""; return
                     end
-                    -- click outside: commit
-                    if Input.m1Down then
-                        local n = tonumber(wg._typeStr)
-                        if n then wg._value=clampVal(n); cb(wg._value) end
-                        wg._typing=false; wg._typeStr=""
-                    end
-                end
-                -- register digit keys in tracked
-                for _,k in ipairs({0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,
-                    0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,
-                    0x0D,0x08,0xBE,0xBD,0x6E,0x6D}) do
-                    if not table.find(W._tracked,k) then table.insert(W._tracked,k) end
-                end
+                end)
+                table.insert(W._kbConns, _slConn)
                 table.insert(S._widgets, wg)
                 local r={}
                 function r:Get() return wg._value end
