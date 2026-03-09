@@ -1127,7 +1127,7 @@ function UI:Window(opts)
             function S:Label(wo)
                 wo = wo or {}
                 local wg = { _drawings={}, _h=22, _text=wo.Title or "" }
-                local d = H.Txt(17) ; d.Color=Theme.SubText ; d.Text=wg._text ; wg._drawings.d=d
+                local d = H.Txt(17) ; d.Color=Theme.SubText ; d.Text=wg._text ; wg._drawings.d=d ; CR_(d, "SubText")
                 wg._upd = function(x,y,w,ct,cb2)
                     local vis=H.TxtClip(y+3,Theme.FontSize,ct,cb2)
                     d.Position=H.Vec2(x,y+3); d.Visible=vis
