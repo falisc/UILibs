@@ -185,9 +185,6 @@ Themes.Ash = {
 
 local Theme = Themes.Discord  -- default
 
--- expose theme names for runtime switching
-do for k in pairs(Themes) do UI.Themes[k] = true end end
-
 local H = {}
 function H.Vec2(x, y) return Vector2.new(x, y) end
 function H.MousePos() return H.Vec2(Mouse.X, Mouse.Y) end
@@ -274,7 +271,8 @@ end
 -- ============================================================
 UI = {}
 UI.__index = UI
-UI.Themes = {}  -- populated after Themes table is built; see below
+UI.Themes = {}
+do for k in pairs(Themes) do UI.Themes[k] = true end end
 
 function UI:Window(opts)
     opts = opts or {}
