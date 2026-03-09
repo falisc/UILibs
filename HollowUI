@@ -248,23 +248,25 @@ local ALL_KEYS = {
     0xA0,0xA1,0xA2,0xA3,0x1B,0x20,0x0D,
 }
 
-local UIS = game:GetService("UserInputService")
-
 local Input = {
     m1 = false, m1Last = false, m1Down = false, m1Up = false,
     keys = {}, keysLast = {}, keysDown = {},
+    _connections = {},
 }
 
-UIS.InputBegan:Connect(function(inp)
+local UIS = game:GetService("UserInputService")
+table.insert(Input._connections, UIS.InputBegan:Connect(function(inp)
     if inp.KeyCode == Enum.KeyCode.MouseButton1 then
-        Input.m1 = true; Input.m1Down = true
+        Input.m1 = true
+        Input.m1Down = true
     end
-end)
-UIS.InputEnded:Connect(function(inp)
+end))
+table.insert(Input._connections, UIS.InputEnded:Connect(function(inp)
     if inp.KeyCode == Enum.KeyCode.MouseButton1 then
-        Input.m1 = false; Input.m1Up = true
+        Input.m1 = false
+        Input.m1Up = true
     end
-end)
+end))
 
 function Input.Poll(tracked)
     local seen = {}
