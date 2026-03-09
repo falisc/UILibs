@@ -256,27 +256,26 @@ local Input = {
     _connections = {},
 }
 
-local UIS = game:GetService("UserInputService")
 table.insert(Input._connections, UIS.InputBegan:Connect(function(inp)
     if inp.KeyCode == Enum.KeyCode.MouseButton1 then
-        Input.m1 = true
-        Input.m1Down = true
+        Input.m1 = true; Input.m1Down = true
     end
 end))
 table.insert(Input._connections, UIS.InputEnded:Connect(function(inp)
     if inp.KeyCode == Enum.KeyCode.MouseButton1 then
-        Input.m1 = false
-        Input.m1Up = true
+        Input.m1 = false; Input.m1Up = true
     end
 end))
 
 function Input.Poll(tracked)
+    -- only poll keys when Roblox window is focused
+    local active = true; pcall(function() active = isrbxactive() end)
     local seen = {}
     for _, k in ipairs(tracked) do
         if not seen[k] then
             seen[k] = true
             Input.keysLast[k] = Input.keys[k]
-            Input.keys[k]     = iskeypressed(k)
+            Input.keys[k]     = active and iskeypressed(k) or false
             Input.keysDown[k] = Input.keys[k] and not Input.keysLast[k]
         end
     end
@@ -1230,22 +1229,18 @@ function UI:Window(opts)
                     if _key and Input.keysDown[_key] then
                         wg._value=not wg._value; cb(wg._value)
                     end
+                    if _changing then
+                        if (os.clock()-_changeT)<0.15 then return end
+                        if iskeypressed(0x1B) then _changing=false; _key=nil; return end
+                        if iskeypressed(0x08) then _changing=false; _key=nil; return end
+                        for _,k in ipairs(ALL_KEYS) do
+                            if iskeypressed(k) then
+                                _key=k; table.insert(W._tracked,k)
+                                _changing=false; _changeT=os.clock(); return
+                            end
+                        end
+                    end
                 end
-                -- use UIS for keybind capture so it's focus-gated
-                local _kbConn; _kbConn = UIS.InputBegan:Connect(function(inp)
-                    if not _changing then return end
-                    if (os.clock()-_changeT)<0.15 then return end
-                    local k = inp.KeyCode
-                    if k == Enum.KeyCode.Escape or k == Enum.KeyCode.Backspace then
-                        _changing=false; _key=nil; return
-                    end
-                    local kv = k.Value
-                    if kv and kv ~= 0 then
-                        _key=kv; table.insert(W._tracked, kv)
-                        _changing=false; _changeT=os.clock()
-                    end
-                end)
-                table.insert(W._kbConns, _kbConn)
                 table.insert(S._widgets, wg)
                 local r={}
                 function r:Get() return wg._value end
@@ -1349,55 +1344,50 @@ function UI:Window(opts)
                     end
                 end
                 wg._release = function() wg._sliding=false end
+                local DIGIT_KEYS = {
+                    [0x30]="0",[0x31]="1",[0x32]="2",[0x33]="3",[0x34]="4",
+                    [0x35]="5",[0x36]="6",[0x37]="7",[0x38]="8",[0x39]="9",
+                    [0x60]="0",[0x61]="1",[0x62]="2",[0x63]="3",[0x64]="4",
+                    [0x65]="5",[0x66]="6",[0x67]="7",[0x68]="8",[0x69]="9",
+                }
+                -- register all slider typing keys so Input.Poll tracks them
+                for k in pairs(DIGIT_KEYS) do
+                    if not table.find(W._tracked,k) then table.insert(W._tracked,k) end
+                end
+                for _,k in ipairs({0x0D,0x08,0xBE,0xBD,0x6E,0x6D,0x1B}) do
+                    if not table.find(W._tracked,k) then table.insert(W._tracked,k) end
+                end
                 wg._poll = function()
                     if not wg._typing then return end
+                    -- click outside: commit
                     if Input.m1Down and not H.InRect(wg._typeRect.pos, wg._typeRect.size) then
                         local n = tonumber(wg._typeStr)
                         if n then wg._value=clampVal(n); cb(wg._value) end
-                        wg._typing=false; wg._typeStr=""
-                    end
-                end
-                -- UIS connection for slider typing input (focus-gated)
-                local _slConn; _slConn = UIS.InputBegan:Connect(function(inp)
-                    if not wg._typing then return end
-                    local k = inp.KeyCode
-                    local kn = k.Name
-                    -- digits
-                    local digit = kn:match("^(%d)$") or kn:match("^KeypadNum(%d)$") or kn:match("^Zero$") and "0"
-                    -- map KeyCode names to digits
-                    local nameToDigit = {
-                        Zero="0",One="1",Two="2",Three="3",Four="4",
-                        Five="5",Six="6",Seven="7",Eight="8",Nine="9",
-                        KeypadZero="0",KeypadOne="1",KeypadTwo="2",KeypadThree="3",KeypadFour="4",
-                        KeypadFive="5",KeypadSix="6",KeypadSeven="7",KeypadEight="8",KeypadNine="9",
-                    }
-                    if nameToDigit[kn] then
-                        if #wg._typeStr < 8 then wg._typeStr = wg._typeStr..nameToDigit[kn] end
-                        return
-                    end
-                    if kn == "Period" or kn == "KeypadPeriod" then
-                        if not string.find(wg._typeStr,"%.") then wg._typeStr=wg._typeStr.."." end
-                        return
-                    end
-                    if kn == "Minus" or kn == "KeypadMinus" then
-                        if wg._typeStr=="" then wg._typeStr="-" end
-                        return
-                    end
-                    if kn == "Backspace" then
-                        wg._typeStr = string.sub(wg._typeStr,1,#wg._typeStr-1)
-                        return
-                    end
-                    if kn == "Return" or kn == "KeypadEnter" then
-                        local n = tonumber(wg._typeStr)
-                        if n then wg._value=clampVal(n); cb(wg._value) end
-                        wg._typing=false; wg._typeStr=""
-                        return
-                    end
-                    if kn == "Escape" then
                         wg._typing=false; wg._typeStr=""; return
                     end
-                end)
-                table.insert(W._kbConns, _slConn)
+                    for k,d in pairs(DIGIT_KEYS) do
+                        if Input.keysDown[k] then
+                            if #wg._typeStr < 8 then wg._typeStr=wg._typeStr..d end; return
+                        end
+                    end
+                    if Input.keysDown[0xBE] or Input.keysDown[0x6E] then
+                        if not string.find(wg._typeStr,"%.") then wg._typeStr=wg._typeStr.."." end; return
+                    end
+                    if Input.keysDown[0xBD] or Input.keysDown[0x6D] then
+                        if wg._typeStr=="" then wg._typeStr="-" end; return
+                    end
+                    if Input.keysDown[0x08] then
+                        wg._typeStr=string.sub(wg._typeStr,1,#wg._typeStr-1); return
+                    end
+                    if Input.keysDown[0x0D] then
+                        local n=tonumber(wg._typeStr)
+                        if n then wg._value=clampVal(n); cb(wg._value) end
+                        wg._typing=false; wg._typeStr=""; return
+                    end
+                    if Input.keysDown[0x1B] then
+                        wg._typing=false; wg._typeStr=""; return
+                    end
+                end
                 table.insert(S._widgets, wg)
                 local r={}
                 function r:Get() return wg._value end
@@ -1475,6 +1465,7 @@ function UI:Window(opts)
                             o.b.Corner=0
                             if o.b.Visible then o.b.Transparency=_openProg end
                             -- left accent bar for selected
+                            o.l.Color=Theme.Accent
                             o.l.From=H.Vec2(x+1,oy+3); o.l.To=H.Vec2(x+1,oy+21)
                             o.l.Visible=(opt==wg._value) and ov or false
                             if o.l.Visible then o.l.Transparency=_openProg end
@@ -1705,25 +1696,21 @@ function UI:Window(opts)
                     end
                 end
                 wg._poll = function()
-                    if not wg._changing then
+                    if wg._changing then
+                        if (os.clock()-wg._changeT) < 0.15 then return end
+                        if iskeypressed(0x1B) then wg._changing=false; wg._key=nil; onChanged(nil); return end
+                        if iskeypressed(0x08) then wg._changing=false; wg._key=nil; onChanged(nil); return end
+                        for _, k in ipairs(ALL_KEYS) do
+                            if iskeypressed(k) then
+                                wg._changing=false; wg._key=k
+                                table.insert(W._tracked, k)
+                                onChanged(k); return
+                            end
+                        end
+                    else
                         if wg._key and Input.keysDown[wg._key] then onPress() end
                     end
                 end
-                local _kbConn2; _kbConn2 = UIS.InputBegan:Connect(function(inp)
-                    if not wg._changing then return end
-                    if (os.clock()-wg._changeT) < 0.15 then return end
-                    local k = inp.KeyCode
-                    if k == Enum.KeyCode.Escape or k == Enum.KeyCode.Backspace then
-                        wg._changing=false; wg._key=nil; onChanged(nil); return
-                    end
-                    local kv = k.Value
-                    if kv and kv ~= 0 then
-                        wg._changing=false; wg._key=kv
-                        table.insert(W._tracked, kv)
-                        onChanged(kv)
-                    end
-                end)
-                table.insert(W._kbConns, _kbConn2)
                 table.insert(S._widgets, wg)
                 return wg
             end
