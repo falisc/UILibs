@@ -1051,14 +1051,14 @@ function UI:Window(opts)
                     _cbRect.size = H.Vec2(16, HH - 4)
                     local inView = H.InClip(y, HH, ct, cbot)
                     if S._collapsed then
-                        -- right-pointing triangle, fixed size
+                        -- right-pointing triangle
                         dCb.PointA = H.Vec2(cbCX - 4, cbCY - 4)
                         dCb.PointB = H.Vec2(cbCX - 4, cbCY + 4)
                         dCb.PointC = H.Vec2(cbCX + 4, cbCY)
                     else
-                        -- down-pointing triangle, same size
-                        dCb.PointA = H.Vec2(cbCX - 4, cbCY - 3)
-                        dCb.PointB = H.Vec2(cbCX + 4, cbCY - 3)
+                        -- down-pointing triangle, identical size
+                        dCb.PointA = H.Vec2(cbCX - 4, cbCY - 4)
+                        dCb.PointB = H.Vec2(cbCX + 4, cbCY - 4)
                         dCb.PointC = H.Vec2(cbCX,     cbCY + 4)
                     end
                     dCb.Visible = inView
@@ -1125,7 +1125,7 @@ function UI:Window(opts)
                 local wg = { _drawings={}, _h=30, _title=wo.Title or "Button" }
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text; dT.Text=wg._title ; wg._drawings.t=dT
-                local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
+                local dA=H.Txt(18,14); dA.Color=Theme.SubText; dA.Text="☝"; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
                 wg._upd = function(x,y,w,ct,cbot)
                     local vis=H.InClip(y,26,ct,cbot)
                     local bTop=ct and math.max(y,ct) or y
@@ -1135,10 +1135,7 @@ function UI:Window(opts)
                     if dB.Visible then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+5,Theme.FontSize,ct,cbot)
                     dT.Position=H.Vec2(x+8,y+5); dT.Visible=tv
-                    -- right-pointing triangle arrow
-                    local ax = x+w-12; local ay = y+13
-                    dA.PointA=H.Vec2(ax-3,ay-4); dA.PointB=H.Vec2(ax-3,ay+4); dA.PointC=H.Vec2(ax+4,ay)
-                    dA.Visible=tv
+                    dA.Position=H.Vec2(x+w-18,y+4); dA.Visible=tv
                     if tv then dA.Transparency=_openProg end
                 end
                 wg._click = function()
@@ -1289,8 +1286,8 @@ function UI:Window(opts)
                 wg._value = wo.Default or wg._options[1]
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
-                local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
-                -- List container: filled bg + 4-line border
+                local dAU=Drawing.new("Triangle"); dAU.Filled=true; dAU.Color=Theme.Accent; dAU.ZIndex=18; dAU.Visible=false ; wg._drawings.au=dAU
+                local dAD=Drawing.new("Triangle"); dAD.Filled=true; dAD.Color=Theme.Accent; dAD.ZIndex=18; dAD.Visible=false ; wg._drawings.ad=dAD
                 local dLC=H.Sq(19,true,CR); dLC.Color=Theme.Section ; wg._drawings.lc=dLC
                 local dBL=H.Ln(22,1.5); dBL.Color=Theme.Accent ; wg._drawings.bl=dBL
                 local dBR=H.Ln(22,1.5); dBR.Color=Theme.Accent ; wg._drawings.br=dBR
@@ -1300,10 +1297,11 @@ function UI:Window(opts)
                 local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
                 local od={}
                 for i=1,MAX_ROWS do
-                    local ob=H.Sq(20,true,CR); ob.Color=Theme.Accent
+                    local ob=H.Sq(20,true,2); ob.Color=Theme.Accent  -- subtle bg, only shown when selected
+                    local ol=H.Ln(22,2);      ol.Color=Theme.Accent   -- left accent bar
                     local ot=H.Txt(21); ot.Color=Theme.Text
-                    table.insert(od,{b=ob,t=ot})
-                    table.insert(wg._xd,ob); table.insert(wg._xd,ot)
+                    table.insert(od,{b=ob,l=ol,t=ot})
+                    table.insert(wg._xd,ob); table.insert(wg._xd,ol); table.insert(wg._xd,ot)
                 end
                 wg._upd = function(x,y,w,ct,cb2)
                     local ns = #wg._options > MAX_ROWS
@@ -1315,15 +1313,13 @@ function UI:Window(opts)
                     if bv then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cb2)
                     dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=tv
-                    -- triangle arrow: down when closed, up when open
+                    -- double-diamond icon
                     local ax=x+w-11; local ay=y+14
-                    if wg._open then
-                        dA.PointA=H.Vec2(ax-4,ay+3); dA.PointB=H.Vec2(ax+4,ay+3); dA.PointC=H.Vec2(ax,ay-3)
-                    else
-                        dA.PointA=H.Vec2(ax-4,ay-3); dA.PointB=H.Vec2(ax+4,ay-3); dA.PointC=H.Vec2(ax,ay+3)
-                    end
-                    dA.Visible=tv
-                    if tv then dA.Transparency=_openProg end
+                    dAU.PointA=H.Vec2(ax-4,ay-1); dAU.PointB=H.Vec2(ax+4,ay-1); dAU.PointC=H.Vec2(ax,ay-6)
+                    dAD.PointA=H.Vec2(ax-4,ay+1); dAD.PointB=H.Vec2(ax+4,ay+1); dAD.PointC=H.Vec2(ax,ay+6)
+                    dAU.Color=Theme.Accent; dAD.Color=Theme.Accent
+                    dAU.Visible=tv; dAD.Visible=tv
+                    if tv then dAU.Transparency=_openProg; dAD.Transparency=_openProg end
 
                     local listY = y + 30
                     local listH = visible * 26
@@ -1352,14 +1348,21 @@ function UI:Window(opts)
                             local oy = listY + (i-1)*26
                             local ov=H.InClip(oy,25,ct,cb2)
                             -- only show bg for selected row
-                            o.b.Position=H.Vec2(x+2,oy); o.b.Size=H.Vec2(w-4,24)
-                            o.b.Color=Theme.Accent; o.b.Visible=(opt==wg._value) and ov or false
-                            o.b.Corner=CR
+                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(w,24)
+                            -- subtle tinted bg only for selected
+                            local accent = Theme.Accent
+                            o.b.Color=Color3.new(accent.R*0.3, accent.G*0.3, accent.B*0.3)
+                            o.b.Visible=(opt==wg._value) and ov or false
+                            o.b.Corner=0
                             if o.b.Visible then o.b.Transparency=_openProg end
+                            -- left accent bar for selected
+                            o.l.From=H.Vec2(x+1,oy+3); o.l.To=H.Vec2(x+1,oy+21)
+                            o.l.Visible=(opt==wg._value) and ov or false
+                            if o.l.Visible then o.l.Transparency=_openProg end
                             local otv=H.TxtClip(oy+5,Theme.FontSize,ct,cb2)
-                            o.t.Text=opt; o.t.Position=H.Vec2(x+10,oy+5); o.t.Visible=otv
+                            o.t.Text=opt; o.t.Position=H.Vec2(x+12,oy+5); o.t.Visible=otv
                             o.t.Color=(opt==wg._value) and Theme.Text or Theme.SubText
-                        else o.b.Visible=false; o.t.Visible=false end
+                        else o.b.Visible=false; o.l.Visible=false; o.t.Visible=false end
                     end
 
                     if wg._open and ns then
@@ -1386,12 +1389,14 @@ function UI:Window(opts)
                         return
                     end
                     if wg._open then
-                        for i=1,MAX_ROWS do
-                            local o=od[i]
-                            if o.b.Visible and H.InRect(o.b.Position,o.b.Size) then
-                                local opt=wg._options[i+wg._scroll]
-                                if opt then wg._value=opt; wg._open=false; cb(opt); return end
-                            end
+                        -- hit test rows by position, not by background visibility
+                        local my = H.MousePos().Y
+                        local mx = H.MousePos().X
+                        local listY = wg._listY
+                        if mx >= wg._listX and mx <= wg._listX + wg._listH + 100 and my >= listY and my <= listY + wg._listH then
+                            local i = math.floor((my - listY) / 26) + 1
+                            local opt = wg._options[i + wg._scroll]
+                            if opt then wg._value=opt; wg._open=false; cb(opt); return end
                         end
                     end
                     if H.InRect(dB.Position,dB.Size) then wg._open=not wg._open end
@@ -1424,7 +1429,8 @@ function UI:Window(opts)
                 wg._value = wo.Default or {}
                 local dB=H.Sq(17,true,CR); dB.Color=Theme.TabActive ; wg._drawings.b=dB
                 local dT=H.Txt(18); dT.Color=Theme.Text ; wg._drawings.t=dT
-                local dA=Drawing.new("Triangle"); dA.Filled=true; dA.Color=Theme.SubText; dA.ZIndex=18; dA.Visible=false ; wg._drawings.a=dA
+                local dAU=Drawing.new("Triangle"); dAU.Filled=true; dAU.Color=Theme.Accent; dAU.ZIndex=18; dAU.Visible=false ; wg._drawings.au=dAU
+                local dAD=Drawing.new("Triangle"); dAD.Filled=true; dAD.Color=Theme.Accent; dAD.ZIndex=18; dAD.Visible=false ; wg._drawings.ad=dAD
                 local dLC=H.Sq(19,true,CR); dLC.Color=Theme.Section ; wg._drawings.lc=dLC
                 local dBL=H.Ln(22,1.5); dBL.Color=Theme.Accent ; wg._drawings.bl=dBL
                 local dBR=H.Ln(22,1.5); dBR.Color=Theme.Accent ; wg._drawings.br=dBR
@@ -1434,11 +1440,12 @@ function UI:Window(opts)
                 local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb
                 local od={}
                 for i=1,MAX_ROWS do
-                    local ob=H.Sq(20,true,CR); ob.Color=Theme.Section
+                    local ob=H.Sq(20,true,2); ob.Color=Theme.Accent
+                    local ol=H.Ln(22,2);      ol.Color=Theme.Accent
                     local ot=H.Txt(21); ot.Color=Theme.Text
                     local oc=H.Sq(21,true,3)
-                    table.insert(od,{b=ob,t=ot,c=oc})
-                    table.insert(wg._xd,ob); table.insert(wg._xd,ot); table.insert(wg._xd,oc)
+                    table.insert(od,{b=ob,l=ol,t=ot,c=oc})
+                    table.insert(wg._xd,ob); table.insert(wg._xd,ol); table.insert(wg._xd,ot); table.insert(wg._xd,oc)
                 end
                 wg._upd = function(x,y,w,ct,cb2)
                     local ns = #wg._options > MAX_ROWS
@@ -1453,15 +1460,13 @@ function UI:Window(opts)
                     if bv then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cb2)
                     dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=tv
-                    -- triangle arrow: down when closed, up when open
+                    -- double-diamond icon
                     local ax=x+w-11; local ay=y+14
-                    if wg._open then
-                        dA.PointA=H.Vec2(ax-4,ay+3); dA.PointB=H.Vec2(ax+4,ay+3); dA.PointC=H.Vec2(ax,ay-3)
-                    else
-                        dA.PointA=H.Vec2(ax-4,ay-3); dA.PointB=H.Vec2(ax+4,ay-3); dA.PointC=H.Vec2(ax,ay+3)
-                    end
-                    dA.Visible=tv
-                    if tv then dA.Transparency=_openProg end
+                    dAU.PointA=H.Vec2(ax-4,ay-1); dAU.PointB=H.Vec2(ax+4,ay-1); dAU.PointC=H.Vec2(ax,ay-6)
+                    dAD.PointA=H.Vec2(ax-4,ay+1); dAD.PointB=H.Vec2(ax+4,ay+1); dAD.PointC=H.Vec2(ax,ay+6)
+                    dAU.Color=Theme.Accent; dAD.Color=Theme.Accent
+                    dAU.Visible=tv; dAD.Visible=tv
+                    if tv then dAU.Transparency=_openProg; dAD.Transparency=_openProg end
 
                     local listY = y + 30
                     local listH = visible * 26
@@ -1490,16 +1495,22 @@ function UI:Window(opts)
                         if wg._open and opt then
                             local oy = listY + (i-1)*26
                             local ov=H.InClip(oy,25,ct,cb2)
-                            o.b.Position=H.Vec2(x+2,oy); o.b.Size=H.Vec2(w-4,24)
-                            o.b.Color=Theme.Accent; o.b.Visible=sel and ov or false; o.b.Corner=CR
+                            local accent = Theme.Accent
+                            o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(w,24)
+                            o.b.Color=Color3.new(accent.R*0.3, accent.G*0.3, accent.B*0.3)
+                            o.b.Visible=sel and ov or false; o.b.Corner=0
                             if o.b.Visible then o.b.Transparency=_openProg end
+                            o.l.From=H.Vec2(x+1,oy+3); o.l.To=H.Vec2(x+1,oy+21)
+                            o.l.Color=Theme.Accent
+                            o.l.Visible=sel and ov or false
+                            if o.l.Visible then o.l.Transparency=_openProg end
                             local otv=H.TxtClip(oy+5,Theme.FontSize,ct,cb2)
                             o.t.Text=opt; o.t.Position=H.Vec2(x+28,oy+5); o.t.Visible=otv
                             o.t.Color=sel and Theme.Text or Theme.SubText
-                            o.c.Position=H.Vec2(x+6,oy+6); o.c.Size=H.Vec2(13,13)
+                            o.c.Position=H.Vec2(x+8,oy+6); o.c.Size=H.Vec2(13,13)
                             o.c.Color=sel and Theme.Accent or Theme.SliderBg; o.c.Corner=3; o.c.Visible=ov
                             if ov then o.c.Transparency=_openProg end
-                        else o.b.Visible=false; o.t.Visible=false; o.c.Visible=false end
+                        else o.b.Visible=false; o.l.Visible=false; o.t.Visible=false; o.c.Visible=false end
                     end
 
                     if wg._open and ns then
@@ -1524,15 +1535,16 @@ function UI:Window(opts)
                         wg._sbDrag=true; wg._sbDragY=H.MousePos().Y; return
                     end
                     if wg._open then
-                        for i=1,MAX_ROWS do
-                            local o=od[i]
-                            if o.b.Visible and H.InRect(o.b.Position,o.b.Size) then
-                                local opt=wg._options[i+wg._scroll]
-                                if opt then
-                                    local idx=table.find(wg._value,opt)
-                                    if idx then table.remove(wg._value,idx) else table.insert(wg._value,opt) end
-                                    cb(wg._value); return
-                                end
+                        local my = H.MousePos().Y
+                        local mx = H.MousePos().X
+                        local listY = wg._listY
+                        if mx >= wg._listX and mx <= wg._listX + wg._listH + 100 and my >= listY and my <= listY + wg._listH then
+                            local i = math.floor((my - listY) / 26) + 1
+                            local opt = wg._options[i + wg._scroll]
+                            if opt then
+                                local idx = table.find(wg._value, opt)
+                                if idx then table.remove(wg._value, idx) else table.insert(wg._value, opt) end
+                                cb(wg._value); return
                             end
                         end
                     end
