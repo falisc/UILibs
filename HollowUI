@@ -1253,17 +1253,14 @@ function UI:Window(opts)
                 end
 
                 wg._upd = function(x,y,w,ct,cbot)
-                    -- Title top-left, value top-right
+                    -- Title top-left only
                     local tv=H.TxtClip(y+1,Theme.FontSize,ct,cbot)
                     dTt.Position=H.Vec2(x,y+1); dTt.Visible=tv
-                    local vt=tostring(wg._value)..wg._suffix
-                    dVl.Text=vt; dVl.Color=Theme.Accent
-                    dVl.Position=H.Vec2(x+w-#vt*6.2,y+1); dVl.Visible=tv
-                    if tv then dVl.Transparency=_openProg end
+                    if tv then dTt.Transparency=_openProg end
 
-                    -- Track: thin 6px bar, vertically centered below label
-                    local ty = y + 22
-                    local th = 6
+                    -- Track: 14px tall so value text fits inside
+                    local ty = y + 20
+                    local th = 14
                     wg._tp=H.Vec2(x,ty); wg._ts=H.Vec2(w,th)
                     local trv=H.InClip(ty,th+10,ct,cbot)
                     dTr.Position=H.Vec2(x,ty); dTr.Size=H.Vec2(w,th); dTr.Visible=trv
@@ -1275,12 +1272,18 @@ function UI:Window(opts)
                     dFl.Position=H.Vec2(x,ty); dFl.Size=H.Vec2(fillW,th); dFl.Visible=trv
                     if trv then dFl.Transparency=_openProg end
 
-                    -- Thumb knob centered on fill end
+                    -- Thumb knob on fill end
                     local knobX = x + fillW
                     local knobY = ty + th/2
                     dTh.Position=H.Vec2(knobX, knobY); dTh.Visible=trv
                     dTi.Position=H.Vec2(knobX, knobY); dTi.Visible=trv
                     if trv then dTh.Transparency=_openProg; dTi.Transparency=_openProg end
+
+                    -- Value: large, centered inside track
+                    local vt=tostring(wg._value)..wg._suffix
+                    dVl.Text=vt; dVl.Size=11; dVl.Color=Theme.Text
+                    dVl.Position=H.Vec2(x + w/2 - #vt*3.2, ty+1); dVl.Visible=trv
+                    if trv then dVl.Transparency=_openProg end
                 end
                 wg._click = function()
                     if dTr.Visible and H.InRect(wg._tp, H.Vec2(wg._ts.X, wg._ts.Y+10)) then
