@@ -248,6 +248,8 @@ local ALL_KEYS = {
     0xA0,0xA1,0xA2,0xA3,0x1B,0x20,0x0D,
 }
 
+local UIS = game:GetService("UserInputService")
+
 local Input = {
     m1 = false, m1Last = false, m1Down = false, m1Up = false,
     keys = {}, keysLast = {}, keysDown = {},
@@ -307,10 +309,16 @@ function UI:Window(opts)
     W._tabs       = {}
     W._activeTab  = nil
     W._drawings   = {}
+    W._kbConns    = {}  -- UIS keybind connections to disconnect on Unload
     W._cr         = {}  -- color role registry: { {drawing, roleKey} }
     local function CR_(d, role) table.insert(W._cr, {d, role}) return d end
     if opts.Theme and Themes[opts.Theme] then Theme = Themes[opts.Theme] end
-    W._tracked    = { W.Key, 0x1B }
+    W._tracked    = { W.Key, 0x1B,
+        -- digit keys for slider typing
+        0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,
+        0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,
+        0x0D,0x08,0xBE,0xBD,0x6E,0x6D,
+    }
     local _openProg = 0
     local _minProg  = 1
 
@@ -935,6 +943,7 @@ function UI:Window(opts)
     end
     function W:Unload()
         self._running = false
+        for _, c in ipairs(self._kbConns) do pcall(function() c:Disconnect() end) end
         for _, p in ipairs(_avatarPixels) do pcall(function() p.sq:Remove() end) end
         _avatarPixels = {}
     end
@@ -1226,18 +1235,22 @@ function UI:Window(opts)
                     if _key and Input.keysDown[_key] then
                         wg._value=not wg._value; cb(wg._value)
                     end
-                    if _changing then
-                        if (os.clock()-_changeT)<0.15 then return end
-                        if iskeypressed(0x1B) then _changing=false; _key=nil; return end
-                        if iskeypressed(0x08) then _changing=false; _key=nil; return end
-                        for _,k in ipairs(ALL_KEYS) do
-                            if iskeypressed(k) then
-                                _key=k; table.insert(W._tracked,k)
-                                _changing=false; _changeT=os.clock(); return
-                            end
-                        end
-                    end
                 end
+                -- use UIS for keybind capture so it's focus-gated
+                local _kbConn; _kbConn = UIS.InputBegan:Connect(function(inp)
+                    if not _changing then return end
+                    if (os.clock()-_changeT)<0.15 then return end
+                    local k = inp.KeyCode
+                    if k == Enum.KeyCode.Escape or k == Enum.KeyCode.Backspace then
+                        _changing=false; _key=nil; return
+                    end
+                    local kv = k.Value
+                    if kv and kv ~= 0 then
+                        _key=kv; table.insert(W._tracked, kv)
+                        _changing=false; _changeT=os.clock()
+                    end
+                end)
+                table.insert(W._kbConns, _kbConn)
                 table.insert(S._widgets, wg)
                 local r={}
                 function r:Get() return wg._value end
@@ -1703,21 +1716,25 @@ function UI:Window(opts)
                     end
                 end
                 wg._poll = function()
-                    if wg._changing then
-                        if (os.clock()-wg._changeT) < 0.15 then return end
-                        if iskeypressed(0x1B) then wg._changing=false; wg._key=nil; onChanged(nil); return end
-                        if iskeypressed(0x08) then wg._changing=false; wg._key=nil; onChanged(nil); return end
-                        for _, k in ipairs(ALL_KEYS) do
-                            if iskeypressed(k) then
-                                wg._changing=false; wg._key=k
-                                table.insert(W._tracked, k)
-                                onChanged(k); return
-                            end
-                        end
-                    else
+                    if not wg._changing then
                         if wg._key and Input.keysDown[wg._key] then onPress() end
                     end
                 end
+                local _kbConn2; _kbConn2 = UIS.InputBegan:Connect(function(inp)
+                    if not wg._changing then return end
+                    if (os.clock()-wg._changeT) < 0.15 then return end
+                    local k = inp.KeyCode
+                    if k == Enum.KeyCode.Escape or k == Enum.KeyCode.Backspace then
+                        wg._changing=false; wg._key=nil; onChanged(nil); return
+                    end
+                    local kv = k.Value
+                    if kv and kv ~= 0 then
+                        wg._changing=false; wg._key=kv
+                        table.insert(W._tracked, kv)
+                        onChanged(kv)
+                    end
+                end)
+                table.insert(W._kbConns, _kbConn2)
                 table.insert(S._widgets, wg)
                 return wg
             end
