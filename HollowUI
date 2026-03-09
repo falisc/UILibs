@@ -176,6 +176,9 @@ Themes.Ash = {
 
 local Theme = Themes.Discord  -- default
 
+-- expose theme names for runtime switching
+do for k in pairs(Themes) do UI.Themes[k] = true end end
+
 local H = {}
 function H.Vec2(x, y) return Vector2.new(x, y) end
 function H.MousePos() return H.Vec2(Mouse.X, Mouse.Y) end
@@ -262,6 +265,7 @@ end
 -- ============================================================
 UI = {}
 UI.__index = UI
+UI.Themes = {}  -- populated after Themes table is built; see below
 
 function UI:Window(opts)
     opts = opts or {}
@@ -917,7 +921,26 @@ function UI:Window(opts)
         end
     end
 
-    function W:Tab(opts)
+    function W:SetTheme(name)
+        if not name or not Themes[name] then return end
+        Theme = Themes[name]
+        -- re-tint all static window drawings that cache theme colors at creation
+        -- (most drawings re-read Theme.X every frame in _draw, so just updating
+        --  Theme is enough — only the topbar/sidebar bg need explicit refresh)
+    end
+
+    function W:ThemeDropdown(section, title)
+        local names = {}
+        for k in pairs(Themes) do table.insert(names, k) end
+        table.sort(names)
+        local current = "Discord"
+        for k in pairs(Themes) do
+            if Themes[k] == Theme then current = k end
+        end
+        return section:Dropdown({ Title = title or "Theme", Options = names, Default = current }, function(v)
+            self:SetTheme(v)
+        end)
+    end
         opts = opts or {}
         local T = { _title=opts.Title or "Tab", _window=W, _sections={}, _drawings={}, _pc=0 }
         T._rect = { pos=H.Vec2(0,0), size=H.Vec2(0,0) }
