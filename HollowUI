@@ -428,8 +428,8 @@ function UI:Window(opts)
         if dn and dn ~= "" and dn ~= "nil" then _dispName = dn end
     end)
 
-    local dPlrName = H.Txt(13,13) ; dPlrName.Color = Theme.Text    ; W._drawings.plrName = dPlrName
-    local dPlrDisp = H.Txt(13,10) ; dPlrDisp.Color = Theme.SubText ; W._drawings.plrDisp = dPlrDisp
+    local dPlrName = H.Txt(13,13) ; dPlrName.Color = Theme.Text    ; W._drawings.plrName = dPlrName ; CR_(dPlrName, "Text")
+    local dPlrDisp = H.Txt(13,10) ; dPlrDisp.Color = Theme.SubText ; W._drawings.plrDisp = dPlrDisp ; CR_(dPlrDisp, "SubText")
     -- Spoof button: small square on right side of player card, no text
     local dPlrSpoof = H.Sq(13,true,CR) ; dPlrSpoof.Color = Theme.MinimizeBtn ; W._drawings.plrSpoof = dPlrSpoof
     local _plrSpoofed = false
