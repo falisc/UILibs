@@ -1,6 +1,6 @@
 --[[
     MatchaUI Library - Matcha Compatible
-    Uses polling-based input (ismouse1pressed, iskeypressed)
+    Uses UserInputService events for mouse (focus-gated) + iskeypressed for keys
     
     DOCUMENTATION:
     ==============
@@ -248,24 +248,28 @@ local ALL_KEYS = {
     0xA0,0xA1,0xA2,0xA3,0x1B,0x20,0x0D,
 }
 
+local UIS = game:GetService("UserInputService")
+
 local Input = {
-    m1 = false, m1Last = false, m1Down = false, m1Up = false,
+    m1 = false, m1Down = false, m1Up = false,
     keys = {}, keysLast = {}, keysDown = {},
 }
-function Input.Poll(tracked)
-    -- don't process any input when the Roblox window isn't focused
-    local focused = true
-    pcall(function() focused = game:GetService("GuiService").WindowFocused end)
-    if not focused then
-        Input.m1Down = false; Input.m1Up = false
-        for _, k in ipairs(tracked) do Input.keysDown[k] = false end
-        Input.m1Last = true; Input.m1 = false  -- treat as released
-        return
+
+-- Use events so input only fires when Roblox window is focused
+UIS.InputBegan:Connect(function(inp)
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+        Input.m1 = true; Input.m1Down = true
     end
-    Input.m1Last = Input.m1
-    Input.m1     = ismouse1pressed()
-    Input.m1Down = Input.m1 and not Input.m1Last
-    Input.m1Up   = not Input.m1 and Input.m1Last
+end)
+UIS.InputEnded:Connect(function(inp)
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+        Input.m1 = false; Input.m1Up = true
+    end
+end)
+
+function Input.Poll(tracked)
+    -- key polling still uses iskeypressed (keys fire regardless, but
+    -- m1 clicks are now event-gated so the window focus problem is solved)
     local seen = {}
     for _, k in ipairs(tracked) do
         if not seen[k] then
@@ -275,6 +279,11 @@ function Input.Poll(tracked)
             Input.keysDown[k] = Input.keys[k] and not Input.keysLast[k]
         end
     end
+end
+
+function Input.ClearFrameFlags()
+    Input.m1Down = false
+    Input.m1Up   = false
 end
 
 -- ============================================================
@@ -904,6 +913,7 @@ function UI:Window(opts)
                 W._input()
                 W._draw()
                 W._layout()
+                Input.ClearFrameFlags()
             end)
             if not ok then print("[MatchaUI Error]", err) end
             task.wait(0)
