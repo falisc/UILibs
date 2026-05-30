@@ -270,7 +270,6 @@ function Input.Poll(tracked)
             Input.keysDown[k] = Input.keys[k] and not Input.keysLast[k]
         end
     end
-endnd
 end
 
 function Input.ClearFrameFlags()
