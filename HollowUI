@@ -254,20 +254,13 @@ local Input = {
     _connections = {},
 }
 
--- FIX: use UserInputType for mouse buttons, not KeyCode
-table.insert(Input._connections, UIS.InputBegan:Connect(function(inp)
-    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
-        Input.m1 = true; Input.m1Down = true
-    end
-end))
-table.insert(Input._connections, UIS.InputEnded:Connect(function(inp)
-    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
-        Input.m1 = false; Input.m1Up = true
-    end
-end))
-
 function Input.Poll(tracked)
     local active = true; pcall(function() active = isrbxactive() end)
+    local m1Now = active and UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or false
+    Input.m1Last = Input.m1
+    Input.m1Down = m1Now and not Input.m1Last
+    Input.m1Up   = not m1Now and Input.m1Last
+    Input.m1     = m1Now
     local seen = {}
     for _, k in ipairs(tracked) do
         if not seen[k] then
@@ -277,6 +270,7 @@ function Input.Poll(tracked)
             Input.keysDown[k] = Input.keys[k] and not Input.keysLast[k]
         end
     end
+endnd
 end
 
 function Input.ClearFrameFlags()
@@ -528,7 +522,7 @@ function UI:Window(opts)
         local iconSize = 30
         local iconX = pos.X + P
         local iconY = plrY + plrH/2 - iconSize/2
-        if not _avatarLoaded then _loadAvatar(iconX, iconY) end
+        if not _avatarLoaded and not _avatarLoading then _loadAvatar(iconX, iconY) end
         dPlrIcon.Position = H.Vec2(iconX, iconY); dPlrIcon.Size = H.Vec2(iconSize, iconSize)
         dPlrIcon.Visible  = vis and #_avatarPixels == 0; f(dPlrIcon)
         dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6)
