@@ -1,6 +1,9 @@
 --[[
-    MatchaUI Library - Matcha Compatible
-    Uses UserInputService events for mouse (focus-gated) + iskeypressed for keys
+    MatchaUI Library - Fixed
+    Fixes applied:
+      1. spawn() -> task.spawn() in render loop (prevents throttling/freeze)
+      2. _openProg starts at 1 (no fade-in stall)
+      3. Mouse input uses UserInputType instead of KeyCode (clicks now work)
     
     DOCUMENTATION:
     ==============
@@ -63,7 +66,6 @@ local Mouse       = LocalPlayer:GetMouse()
 
 local Themes = {}
 
--- Discord: blurple-based dark theme
 Themes.Discord = {
     Background    = Color3.fromRGB(18, 18, 20),
     Sidebar       = Color3.fromRGB(23, 23, 26),
@@ -87,7 +89,6 @@ Themes.Discord = {
     TitleSize     = 18,
 }
 
--- Crimson: deep red & black
 Themes.Crimson = {
     Background    = Color3.fromRGB(10, 8, 8),
     Sidebar       = Color3.fromRGB(16, 10, 10),
@@ -111,7 +112,6 @@ Themes.Crimson = {
     TitleSize     = 18,
 }
 
--- Midnight: deep navy blue
 Themes.Midnight = {
     Background    = Color3.fromRGB(8, 10, 18),
     Sidebar       = Color3.fromRGB(10, 13, 24),
@@ -135,7 +135,6 @@ Themes.Midnight = {
     TitleSize     = 18,
 }
 
--- Forest: deep green
 Themes.Forest = {
     Background    = Color3.fromRGB(8, 14, 10),
     Sidebar       = Color3.fromRGB(10, 18, 12),
@@ -159,7 +158,6 @@ Themes.Forest = {
     TitleSize     = 18,
 }
 
--- Ash: clean light grey
 Themes.Ash = {
     Background    = Color3.fromRGB(28, 28, 30),
     Sidebar       = Color3.fromRGB(36, 36, 38),
@@ -183,7 +181,7 @@ Themes.Ash = {
     TitleSize     = 18,
 }
 
-local Theme = Themes.Discord  -- default
+local Theme = Themes.Discord
 
 local H = {}
 function H.Vec2(x, y) return Vector2.new(x, y) end
@@ -256,19 +254,19 @@ local Input = {
     _connections = {},
 }
 
+-- FIX: use UserInputType for mouse buttons, not KeyCode
 table.insert(Input._connections, UIS.InputBegan:Connect(function(inp)
-    if inp.KeyCode == Enum.KeyCode.MouseButton1 then
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
         Input.m1 = true; Input.m1Down = true
     end
 end))
 table.insert(Input._connections, UIS.InputEnded:Connect(function(inp)
-    if inp.KeyCode == Enum.KeyCode.MouseButton1 then
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
         Input.m1 = false; Input.m1Up = true
     end
 end))
 
 function Input.Poll(tracked)
-    -- only poll keys when Roblox window is focused
     local active = true; pcall(function() active = isrbxactive() end)
     local seen = {}
     for _, k in ipairs(tracked) do
@@ -308,20 +306,22 @@ function UI:Window(opts)
     W._tabs       = {}
     W._activeTab  = nil
     W._drawings   = {}
-    W._kbConns    = {}  -- UIS keybind connections to disconnect on Unload
-    W._cr         = {}  -- color role registry: { {drawing, roleKey} }
+    W._kbConns    = {}
+    W._cr         = {}
     local function CR_(d, role) table.insert(W._cr, {d, role}) return d end
     if opts.Theme and Themes[opts.Theme] then Theme = Themes[opts.Theme] end
     W._tracked    = { W.Key, 0x1B }
-    local _openProg = 0
+
+    -- FIX: start at 1 so UI is immediately fully opaque, no stall
+    local _openProg = 1
     local _minProg  = 1
 
     local SB    = 180
     local TH    = 46
     local P     = Theme.Padding
     local CR    = (opts.Rounded == false) and 0 or Theme.Corner
-    local vp  = game:GetService("Workspace").CurrentCamera.ViewportSize
-    W._pos    = H.Vec2(vp.X/2 - W.Size.X/2, vp.Y/2 - W.Size.Y/2)
+    local vp    = game:GetService("Workspace").CurrentCamera.ViewportSize
+    W._pos      = H.Vec2(vp.X/2 - W.Size.X/2, vp.Y/2 - W.Size.Y/2)
 
     local dBg   = H.Sq(10) ; dBg.Color   = Theme.Background ; W._drawings.bg   = dBg  ; CR_(dBg,   "Background")
     local dTop  = H.Sq(11) ; dTop.Color  = Theme.TopBar      ; W._drawings.top  = dTop ; CR_(dTop,  "TopBar")
@@ -337,7 +337,7 @@ function UI:Window(opts)
     local dMin    = H.Sq(13,true,CR) ; dMin.Color = Theme.MinimizeBtn ; W._drawings.min    = dMin    ; CR_(dMin,    "MinimizeBtn")
     local dMinSqB = H.Sq(14,true,2)  ; dMinSqB.Color = Theme.MinimizeBtn ; W._drawings.minSqB = dMinSqB ; CR_(dMinSqB, "MinimizeBtn")
     local dMinSqF = H.Sq(14,false,2) ; dMinSqF.Color = Theme.Text        ; W._drawings.minSqF = dMinSqF ; CR_(dMinSqF, "Text")
-    local dMinSqBo= H.Sq(15,false,2) ; dMinBo_color = Theme.Text ; dMinSqBo.Color = Theme.Text ; W._drawings.minSqBo= dMinSqBo ; CR_(dMinSqBo, "Text")
+    local dMinSqBo= H.Sq(15,false,2) ; dMinSqBo.Color = Theme.Text ; W._drawings.minSqBo= dMinSqBo ; CR_(dMinSqBo, "Text")
     local dSep  = H.Ln(12,1)       ; dSep.Color = Theme.Border      ; W._drawings.sep  = dSep ; CR_(dSep, "Border")
 
     local dGhostBody  = H.Sq(13,true,8)  ; dGhostBody.Color  = Theme.Accent  ; W._drawings.ghostBody  = dGhostBody ; CR_(dGhostBody, "Accent")
@@ -353,15 +353,14 @@ function UI:Window(opts)
     local dPlrIcon    = H.Sq(13,true,CR)  ; dPlrIcon.Color  = Theme.Accent   ; W._drawings.plrIcon    = dPlrIcon    ; CR_(dPlrIcon,    "Accent")
     local dPlrInitial = H.Txt(14,12)      ; dPlrInitial.Color = Theme.Text   ; W._drawings.plrInitial = dPlrInitial ; CR_(dPlrInitial, "Text")
 
-    -- Avatar pixel squares (loaded async from luard API)
-    local _avatarPixels = {}   -- list of {sq, rx, ry} where rx/ry are 0..1 relative positions
+    local _avatarPixels = {}
     local _avatarLoaded = false
     local _avatarIconSize = 30
 
     local function _loadAvatar(iconX, iconY)
         if _avatarLoaded then return end
-        _avatarLoaded = true  -- prevent double-load
-        spawn(function()
+        _avatarLoaded = true
+        task.spawn(function()
             local uname = tostring(LocalPlayer.Name)
             local url = "https://api.luard.co/v1/user?v5=" .. uname .. "&res=32"
             local ok, code = pcall(function() return game:HttpGet(url) end)
@@ -372,7 +371,6 @@ function UI:Window(opts)
             if not ok2 then _avatarLoaded = false; return end
             local av = _G.avatar_data
             if not av or not av.pixels then _avatarLoaded = false; return end
-            -- clear old pixels
             for _, p in ipairs(_avatarPixels) do pcall(function() p.sq:Remove() end) end
             _avatarPixels = {}
             local pw = _avatarIconSize / av.width
@@ -389,7 +387,6 @@ function UI:Window(opts)
                         sq.Size   = H.Vec2(math.ceil(pSize)+1, math.ceil(pSize)+1)
                         sq.ZIndex = 14
                         sq.Visible = false
-                        -- store relative position (0..1)
                         table.insert(_avatarPixels, {
                             sq = sq,
                             rx = (px-1) / av.width,
@@ -398,17 +395,13 @@ function UI:Window(opts)
                     end
                 end
             end
-            -- hide fallback icon now that we have pixels
             dPlrIcon.Visible = false
             dPlrInitial.Visible = false
         end)
     end
 
-    local _lastIconX, _lastIconY = 0, 0
     local function _updateAvatarPixels(iconX, iconY, iconSize, vis, prog)
         if not _avatarLoaded or #_avatarPixels == 0 then return end
-        local pSize = iconSize / math.sqrt(#_avatarPixels)  -- approx
-        -- recalc from first pixel
         for _, p in ipairs(_avatarPixels) do
             local px = iconX + p.rx * iconSize
             local py = iconY + p.ry * iconSize
@@ -416,7 +409,6 @@ function UI:Window(opts)
             p.sq.Transparency = prog
             p.sq.Visible = vis
         end
-        -- hide fallback when pixels are showing
         dPlrIcon.Visible = false
         dPlrInitial.Visible = false
     end
@@ -430,7 +422,6 @@ function UI:Window(opts)
 
     local dPlrName = H.Txt(13,13) ; dPlrName.Color = Theme.Text    ; W._drawings.plrName = dPlrName ; CR_(dPlrName, "Text")
     local dPlrDisp = H.Txt(13,10) ; dPlrDisp.Color = Theme.SubText ; W._drawings.plrDisp = dPlrDisp ; CR_(dPlrDisp, "SubText")
-    -- Spoof button: small square on right side of player card, no text
     local dPlrSpoof = H.Sq(13,true,CR) ; dPlrSpoof.Color = Theme.MinimizeBtn ; W._drawings.plrSpoof = dPlrSpoof
     local _plrSpoofed = false
     local _plrSpoofRect = {pos=H.Vec2(0,0), size=H.Vec2(18,18)}
@@ -446,8 +437,8 @@ function UI:Window(opts)
         local pos  = W._pos
         local sz   = W.Size
 
-        _openProg = _openProg + ((W._open and 1 or 0) - _openProg) * 0.07
-        _minProg  = _minProg  + ((W._minimized and 0 or 1) - _minProg) * 0.1
+        _openProg = _openProg + ((W._open and 1 or 0) - _openProg) * 0.2
+        _minProg  = _minProg  + ((W._minimized and 0 or 1) - _minProg) * 0.2
 
         local fade   = _openProg
         local isVis  = _openProg > 0.01
@@ -471,7 +462,6 @@ function UI:Window(opts)
         dSideTop.Position = pos + H.Vec2(0,TH); dSideTop.Size = H.Vec2(SB, CR*2); dSideTop.Visible = vis; f(dSideTop)
         dSideB.Position= pos + H.Vec2(SB,TH); dSideB.Size= H.Vec2(1,bodyH); dSideB.Visible= vis; f(dSideB)
 
-        -- Ghost logo in top-left of topbar
         local gW, gH = 22, 26
         local gX = pos.X + P + 2
         local gY = pos.Y + TH/2 - gH/2
@@ -480,20 +470,18 @@ function UI:Window(opts)
         dGhostEyeL.Position = H.Vec2(gX + 6,  gY + 9); dGhostEyeL.Visible = isVis; f(dGhostEyeL)
         dGhostEyeR.Position = H.Vec2(gX + 16, gY + 9); dGhostEyeR.Visible = isVis; f(dGhostEyeR)
         local skY = gY + gH; local skH = 6; local skW = gW / 3
-        dGhostSkL.PointA=H.Vec2(gX,         skY-skH); dGhostSkL.PointB=H.Vec2(gX+skW,       skY); dGhostSkL.PointC=H.Vec2(gX,         skY)
-        dGhostSkM.PointA=H.Vec2(gX+skW,     skY);     dGhostSkM.PointB=H.Vec2(gX+skW*1.5,   skY-skH); dGhostSkM.PointC=H.Vec2(gX+skW*2,   skY)
-        dGhostSkR.PointA=H.Vec2(gX+skW*2,   skY);     dGhostSkR.PointB=H.Vec2(gX+gW,        skY-skH); dGhostSkR.PointC=H.Vec2(gX+gW,      skY)
+        dGhostSkL.PointA=H.Vec2(gX,       skY-skH); dGhostSkL.PointB=H.Vec2(gX+skW,     skY); dGhostSkL.PointC=H.Vec2(gX,       skY)
+        dGhostSkM.PointA=H.Vec2(gX+skW,   skY);     dGhostSkM.PointB=H.Vec2(gX+skW*1.5, skY-skH); dGhostSkM.PointC=H.Vec2(gX+skW*2, skY)
+        dGhostSkR.PointA=H.Vec2(gX+skW*2, skY);     dGhostSkR.PointB=H.Vec2(gX+gW,      skY-skH); dGhostSkR.PointC=H.Vec2(gX+gW,    skY)
         dGhostSkL.Visible=isVis; f(dGhostSkL)
         dGhostSkM.Visible=isVis; f(dGhostSkM)
         dGhostSkR.Visible=isVis; f(dGhostSkR)
 
-        -- Title: shifted right of ghost
         local titleX = pos.X + P + gW + 12
         local titleY = pos.Y + TH/2 - Theme.TitleSize/2
         dTtl.Position = H.Vec2(titleX, titleY)
         dTtl.Visible  = isVis; ft(dTtl)
 
-        -- Subtitle: same line as title, slightly smaller, faded
         if W.Subtitle ~= "" then
             local titleCharW = Theme.TitleSize * 0.52
             local titleTextW = #W.Title * titleCharW
@@ -514,10 +502,7 @@ function UI:Window(opts)
         local mPos = pos + H.Vec2(sz.X - btn.X*2 - P*2, TH/2 - btn.Y/2)
         minR.pos = mPos
         dMin.Position=mPos; dMin.Size=btn; dMin.Visible=isVis; f(dMin)
-        -- Double-square restore icon inside button
-        -- Back square: offset top-right
-        local sqS = 8   -- square size
-        local sqOff = 3 -- offset between the two squares
+        local sqS = 8; local sqOff = 3
         local bkX = mPos.X + btn.X/2 - sqS/2 + sqOff
         local bkY = mPos.Y + btn.Y/2 - sqS/2 - sqOff
         local ftX = mPos.X + btn.X/2 - sqS/2 - sqOff + 1
@@ -543,17 +528,13 @@ function UI:Window(opts)
         local iconSize = 30
         local iconX = pos.X + P
         local iconY = plrY + plrH/2 - iconSize/2
-        -- trigger async load on first draw
         if not _avatarLoaded then _loadAvatar(iconX, iconY) end
-        -- fallback icon (shown until avatar loads)
         dPlrIcon.Position = H.Vec2(iconX, iconY); dPlrIcon.Size = H.Vec2(iconSize, iconSize)
         dPlrIcon.Visible  = vis and #_avatarPixels == 0; f(dPlrIcon)
         dPlrInitial.Position = H.Vec2(iconX + iconSize/2 - 4, iconY + iconSize/2 - 6)
         dPlrInitial.Visible  = vis and #_avatarPixels == 0; ft(dPlrInitial)
-        -- pixel avatar
         _updateAvatarPixels(iconX, iconY, iconSize, vis, _openProg)
 
-        -- Spoof button: right side of player card
         local spoofBtnW = 18; local spoofBtnH = 18
         local spoofBtnX = pos.X + SB - spoofBtnW - P
         local spoofBtnY = plrY + plrH/2 - spoofBtnH/2
@@ -564,7 +545,6 @@ function UI:Window(opts)
         dPlrSpoof.Color    = _plrSpoofed and Theme.Accent or Theme.MinimizeBtn
         dPlrSpoof.Visible  = vis; f(dPlrSpoof)
 
-        -- Update names based on spoof state
         local shownName = _plrSpoofed and "spoofed" or _dispName
         local shownDisp = _plrSpoofed and "@spoofed" or ("@".._userName)
         dPlrName.Text = shownName
@@ -619,27 +599,20 @@ function UI:Window(opts)
         T._scroll  = T._scroll or 0
         local secs = T._sections
 
-        -- Detect if this tab uses paired (two-column) layout
         local hasPaired = false
         for _, s in ipairs(secs) do
             if s._paired then hasPaired = true; break end
         end
 
         if hasPaired then
-            -- ── Two-column independent layout ──────────────────────────────
-            -- Split sections into left (odd _pg) and right (even _pg) columns.
-            -- Each pg group contributes one section to each column in order.
-            -- Sections with _paired=false go full-width between column blocks (rare).
             local hw   = (cw - P) / 2
             local lx   = cx
             local rx   = cx + hw + P
 
-            -- Gather paired groups in order, keyed by _pg
             local pgOrder = {}
             local pgSeen  = {}
-            local fullSecs = {}  -- non-paired full-width sections
-            local leftMap  = {}  -- pg -> section
-            local rightMap = {}  -- pg -> section
+            local leftMap  = {}
+            local rightMap = {}
 
             local i = 1
             while i <= #secs do
@@ -654,19 +627,13 @@ function UI:Window(opts)
                     rightMap[s1._pg] = s2
                     i = i + 2
                 else
-                    if not s1._paired then
-                        table.insert(fullSecs, {s=s1, after_pg=pgOrder[#pgOrder]})
-                    end
                     i = i + 1
                 end
             end
 
-            -- Build independent column item lists
-            -- Each item: {sec=s, y=absoluteY}
             local leftItems  = {}
             local rightItems = {}
 
-            -- Measure all sections first
             for _, pg in ipairs(pgOrder) do
                 local sl = leftMap[pg]
                 local sr = rightMap[pg]
@@ -674,9 +641,7 @@ function UI:Window(opts)
                 if sr then sr._measure(hw) end
             end
 
-            -- Left column Y positions
-            local lY = cy
-            local lTotal = 0
+            local lY = cy; local lTotal = 0
             for _, pg in ipairs(pgOrder) do
                 local sl = leftMap[pg]
                 if sl then
@@ -686,9 +651,7 @@ function UI:Window(opts)
                 end
             end
 
-            -- Right column Y positions
-            local rY = cy
-            local rTotal = 0
+            local rY = cy; local rTotal = 0
             for _, pg in ipairs(pgOrder) do
                 local sr = rightMap[pg]
                 if sr then
@@ -698,41 +661,30 @@ function UI:Window(opts)
                 end
             end
 
-            -- Scroll is based on the taller column
-            local totalH  = math.max(lTotal, rTotal)
+            local totalH    = math.max(lTotal, rTotal)
             local maxScroll = math.max(0, totalH - availH)
             T._scroll = math.clamp(T._scroll, 0, maxScroll)
 
-            -- Draw left column
             for _, item in ipairs(leftItems) do
                 local sy = item.y - T._scroll
                 local inView = (sy + item.sec._h) > clipTop and sy < clipBottom
-                if inView then
-                    item.sec._upd(lx, sy, hw, clipTop, clipBottom)
-                else
-                    item.sec._hide()
-                end
+                if inView then item.sec._upd(lx, sy, hw, clipTop, clipBottom)
+                else item.sec._hide() end
             end
 
-            -- Draw right column
             for _, item in ipairs(rightItems) do
                 local sy = item.y - T._scroll
                 local inView = (sy + item.sec._h) > clipTop and sy < clipBottom
-                if inView then
-                    item.sec._upd(rx, sy, hw, clipTop, clipBottom)
-                else
-                    item.sec._hide()
-                end
+                if inView then item.sec._upd(rx, sy, hw, clipTop, clipBottom)
+                else item.sec._hide() end
             end
 
-            -- Hide inactive tabs
             for _, tab in ipairs(W._tabs) do
                 if tab ~= T then
                     for _, s in ipairs(tab._sections) do s._hide() end
                 end
             end
 
-            -- Scrollbar
             if maxScroll > 0 then
                 local trackX = W._pos.X + W.Size.X - SB_W - P
                 W._csbTrackX = trackX; W._csbTrackY = clipTop; W._csbTrackH = availH
@@ -747,12 +699,10 @@ function UI:Window(opts)
                 dCsbThumb.Visible  = true
                 dCsbThumb.Transparency = _openProg
             else
-                dCsbTrack.Visible = false
-                dCsbThumb.Visible = false
+                dCsbTrack.Visible = false; dCsbThumb.Visible = false
             end
 
         else
-            -- ── Single-column layout (unchanged) ───────────────────────────
             local rowData = {}
             local rowY    = cy
             local totalH  = 0
@@ -772,11 +722,8 @@ function UI:Window(opts)
             for _, row in ipairs(rowData) do
                 local sy = row.y - T._scroll
                 local inView = (sy + row.h) > clipTop and sy < clipBottom
-                if inView then
-                    row.s1._upd(cx, sy, cw, clipTop, clipBottom)
-                else
-                    row.s1._hide()
-                end
+                if inView then row.s1._upd(cx, sy, cw, clipTop, clipBottom)
+                else row.s1._hide() end
             end
 
             for _, tab in ipairs(W._tabs) do
@@ -799,8 +746,7 @@ function UI:Window(opts)
                 dCsbThumb.Visible  = true
                 dCsbThumb.Transparency = _openProg
             else
-                dCsbTrack.Visible = false
-                dCsbThumb.Visible = false
+                dCsbTrack.Visible = false; dCsbThumb.Visible = false
             end
         end
     end
@@ -829,7 +775,6 @@ function UI:Window(opts)
         end
 
         if not W._open then
-            -- still poll keybinds even when hidden
             for _, tab in ipairs(W._tabs) do
                 for _, s in ipairs(tab._sections) do
                     for _, w in ipairs(s._widgets) do
@@ -877,7 +822,6 @@ function UI:Window(opts)
 
         if W._csbDrag and Input.m1 and W._activeTab then
             local T = W._activeTab
-            local cy     = W._pos.Y + TH + P
             local availH = W.Size.Y - TH - P*2
             local totalH = 0
             for _, s in ipairs(T._sections) do totalH = totalH + s._h + P end
@@ -907,7 +851,8 @@ function UI:Window(opts)
         end
     end
 
-    spawn(function()
+    -- FIX: task.spawn instead of spawn to prevent throttling/freeze
+    task.spawn(function()
         while W._running do
             local ok, err = pcall(function()
                 Input.Poll(W._tracked)
@@ -951,7 +896,6 @@ function UI:Window(opts)
     function W:SetTheme(name)
         if not name or not Themes[name] then return end
         Theme = Themes[name]
-        -- repaint every drawing registered with a color role
         for _, entry in ipairs(W._cr) do
             local d, role = entry[1], entry[2]
             pcall(function() d.Color = Theme[role] end)
@@ -977,8 +921,8 @@ function UI:Window(opts)
         T._rect = { pos=H.Vec2(0,0), size=H.Vec2(0,0) }
 
         local dB = H.Sq(12,true,CR) ; dB.Color = Theme.Sidebar ; T._drawings.b = dB ; CR_(dB, "Sidebar")
-        local dT = H.Txt(13,16)   ; dT.Color = Theme.SubText ; dT.Text = T._title ; T._drawings.t = dT ; CR_(dT, "SubText")
-        local dI = H.Sq(13,true,2)            ; dI.Color = Theme.Accent  ; T._drawings.i = dI ; CR_(dI, "Accent")
+        local dT = H.Txt(13,16)     ; dT.Color = Theme.SubText ; dT.Text = T._title ; T._drawings.t = dT ; CR_(dT, "SubText")
+        local dI = H.Sq(13,true,2)  ; dI.Color = Theme.Accent  ; T._drawings.i = dI ; CR_(dI, "Accent")
 
         T._draw = function(tabY, vis, fade)
             local wp  = W._pos
@@ -993,7 +937,6 @@ function UI:Window(opts)
             dT.Position = bp + H.Vec2(16, (bs.Y - 16) / 2)
             dT.Color    = ia and Theme.Text or Theme.SubText
             dT.Visible  = vis
-            
             dI.Position = bp + H.Vec2(4, (bs.Y - 14) / 2)
             dI.Size     = H.Vec2(3, 14); dI.Visible = vis and ia
             if vis and ia then dI.Transparency = fade end
@@ -1001,9 +944,7 @@ function UI:Window(opts)
 
         T._click = function()
             if H.InRect(T._rect.pos, T._rect.size) then
-                if W._activeTab ~= T then
-                    T._scroll = 0
-                end
+                if W._activeTab ~= T then T._scroll = 0 end
                 W._activeTab = T
                 return
             end
@@ -1016,12 +957,11 @@ function UI:Window(opts)
             so = so or {}
             local S = { _title=so.Title or "", _tab=T, _widgets={}, _drawings={}, _h=0, _paired=false, _pg=nil, _collapsed=so.Collapsed == true }
 
-            local dBs = H.Sq(14)      ; dBs.Color = Theme.Section       ; S._drawings.bs = dBs ; CR_(dBs, "Section")
-            local dHd = H.Sq(15)      ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd ; CR_(dHd, "SectionHeader")
+            local dBs = H.Sq(14)        ; dBs.Color = Theme.Section       ; S._drawings.bs = dBs ; CR_(dBs, "Section")
+            local dHd = H.Sq(15)        ; dHd.Color = Theme.SectionHeader ; S._drawings.hd = dHd ; CR_(dHd, "SectionHeader")
             local dHf = H.Sq(15,true,0) ; dHf.Color = Theme.SectionHeader ; S._drawings.hf = dHf ; CR_(dHf, "SectionHeader")
-            local dSt = H.Txt(16,12)  ; dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt ; CR_(dSt, "SubText")
+            local dSt = H.Txt(16,12)    ; dSt.Color = Theme.SubText ; dSt.Text = S._title ; S._drawings.st = dSt ; CR_(dSt, "SubText")
             local dCb = Drawing.new("Triangle") ; dCb.Color = Theme.SubText ; dCb.Filled = true ; dCb.Visible = false ; dCb.ZIndex = 16 ; S._drawings.cb = dCb ; CR_(dCb, "SubText")
-            -- Hit rect for collapse button
             local _cbRect = {pos=H.Vec2(0,0), size=H.Vec2(16,16)}
 
             S._measure = function(w)
@@ -1065,19 +1005,16 @@ function UI:Window(opts)
                     dHf.Position=H.Vec2(x,y+HH/2); dHf.Size=H.Vec2(w,HH/2); dHf.Visible=H.InClip(y+HH/2,HH/2,ct,cbot)
                     if dHf.Visible then dHf.Transparency=_openProg end
                     dSt.Position=H.Vec2(x+ip,y+HH/2-6); dSt.Visible=H.TxtClip(y+HH/2-6,Theme.FontSize,ct,cbot)
-                    -- Collapse button: right side of header
                     local cbCX = x + w - 10
                     local cbCY = y + HH/2
                     _cbRect.pos  = H.Vec2(cbCX - 8, y + 2)
                     _cbRect.size = H.Vec2(16, HH - 4)
                     local inView = H.InClip(y, HH, ct, cbot)
                     if S._collapsed then
-                        -- right-pointing (rotated 90° from down)
                         dCb.PointA = H.Vec2(cbCX - 3, cbCY - 5)
                         dCb.PointB = H.Vec2(cbCX - 3, cbCY + 5)
                         dCb.PointC = H.Vec2(cbCX + 4, cbCY)
                     else
-                        -- down-pointing, same bounding box
                         dCb.PointA = H.Vec2(cbCX - 5, cbCY - 3)
                         dCb.PointB = H.Vec2(cbCX + 5, cbCY - 3)
                         dCb.PointC = H.Vec2(cbCX,     cbCY + 4)
@@ -1095,7 +1032,6 @@ function UI:Window(opts)
                         wy = wy + wg._h + ip/2
                     end
                 else
-                    -- hide all widgets when collapsed
                     for _, wg in ipairs(S._widgets) do
                         for _, d in pairs(wg._drawings) do pcall(function() d.Visible=false end) end
                         if wg._xd then for _, d in ipairs(wg._xd) do pcall(function() d.Visible=false end) end end
@@ -1112,7 +1048,6 @@ function UI:Window(opts)
             end
 
             S._click = function()
-                -- Check collapse button first
                 if S._title ~= "" and dCb.Visible and H.InRect(_cbRect.pos, _cbRect.size) then
                     S._collapsed = not S._collapsed
                     return
@@ -1157,7 +1092,6 @@ function UI:Window(opts)
                     if dB.Visible then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+5,Theme.FontSize,ct,cbot)
                     dT.Position=H.Vec2(x+8,y+5); dT.Visible=tv
-                    -- chevron: two lines forming a > shape
                     local cx=x+w-13; local cy=y+13
                     dA1.From=H.Vec2(cx,cy-4); dA1.To=H.Vec2(cx+5,cy)
                     dA2.From=H.Vec2(cx+5,cy); dA2.To=H.Vec2(cx,cy+4)
@@ -1206,7 +1140,7 @@ function UI:Window(opts)
                     dKt.Text=ks; dKt.Position=H.Vec2(kbX+4,kbY+3)
                     dKt.Visible=kbVis and H.TxtClip(kbY+3,10,ct,cbot)
                     local targetProg=wg._value and 1 or 0
-                    _prog=_prog+(targetProg-_prog)*0.04
+                    _prog=_prog+(targetProg-_prog)*0.15
                     local kxLeft=tx+1; local kxRight=tx+tw-th+1
                     local kxAnim=kxLeft+(kxRight-kxLeft)*_prog
                     local colAnim=lerpColor(Theme.ToggleOff,Theme.ToggleOn,_prog)
@@ -1259,17 +1193,11 @@ function UI:Window(opts)
                 wg._value = wo.Default or wg._min
 
                 local dTt=H.Txt(17); dTt.Color=Theme.Text; dTt.Text=wg._title ; wg._drawings.tt=dTt ; CR_(dTt, "Text")
-                -- Value box bg
                 local dVb=H.Sq(17,true,4); dVb.Color=Theme.TabActive ; wg._drawings.vb=dVb ; CR_(dVb, "TabActive")
-                -- Value label inside box
                 local dVl=H.Txt(18,11); dVl.Color=Theme.Text ; wg._drawings.vl=dVl ; CR_(dVl, "Text")
-                -- Cursor blink line when typing
                 local dVc=H.Ln(19,1.5); dVc.Color=Theme.Accent ; wg._drawings.vc=dVc ; CR_(dVc, "Accent")
-                -- Track
                 local dTr=H.Sq(17,true,4); dTr.Color=Theme.SliderBg ; wg._drawings.tr=dTr ; CR_(dTr, "SliderBg")
-                -- Fill
                 local dFl=H.Sq(18,true,4); dFl.Color=Theme.SliderFill ; wg._drawings.fl=dFl ; CR_(dFl, "SliderFill")
-                -- Thumb
                 local dTh=H.Circ(19); dTh.Color=Theme.Text; dTh.NumSides=24; dTh.Radius=5; dTh.Filled=true ; wg._drawings.th=dTh ; CR_(dTh, "Text")
                 local dTi=H.Circ(20); dTi.Color=Theme.Accent; dTi.NumSides=24; dTi.Radius=2; dTi.Filled=true ; wg._drawings.ti=dTi ; CR_(dTi, "Accent")
 
@@ -1289,7 +1217,6 @@ function UI:Window(opts)
                     dTt.Position=H.Vec2(x,y+1); dTt.Visible=tv
                     if tv then dTt.Transparency=_openProg end
 
-                    -- Value box: auto-width based on text
                     local vt = wg._typing and (wg._typeStr ~= "" and wg._typeStr or "_") or (tostring(wg._value)..wg._suffix)
                     local _vbW = math.max(28, #vt * 6.5 + 12)
                     local vbX = x+w-_vbW; local vbY = y
@@ -1302,7 +1229,6 @@ function UI:Window(opts)
                     dVl.Position=H.Vec2(vbX + _vbW/2 - #vt*3.2, vbY+3); dVl.Visible=tv
                     if tv then dVl.Transparency=_openProg end
 
-                    -- Blinking cursor when typing
                     local showCursor = wg._typing and (math.floor(os.clock()*2)%2==0)
                     if showCursor then
                         local cx = vbX+_vbW/2+#vt*3.2+1
@@ -1310,9 +1236,8 @@ function UI:Window(opts)
                         dVc.Visible=tv
                     else dVc.Visible=false end
 
-                    -- Track
                     local ty2 = y+22; local th=14
-                    local trackW = w  -- full width, value box floats above
+                    local trackW = w
                     wg._tp=H.Vec2(x,ty2); wg._ts=H.Vec2(trackW,th)
                     local trv=H.InClip(ty2,th+10,ct,cbot)
                     dTr.Position=H.Vec2(x,ty2); dTr.Size=H.Vec2(trackW,th); dTr.Visible=trv
@@ -1328,11 +1253,9 @@ function UI:Window(opts)
                     if trv then dTh.Transparency=_openProg; dTi.Transparency=_openProg end
                 end
                 wg._click = function()
-                    -- click value box -> enter typing mode
                     if dVb.Visible and H.InRect(wg._typeRect.pos, wg._typeRect.size) then
                         wg._typing=true; wg._typeStr=""; return
                     end
-                    -- click track -> slide
                     if not wg._typing and dTr.Visible and H.InRect(wg._tp, H.Vec2(wg._ts.X, wg._ts.Y+10)) then
                         wg._sliding=true
                         local v=calc(Mouse.X); if v~=wg._value then wg._value=v; cb(v) end
@@ -1350,7 +1273,6 @@ function UI:Window(opts)
                     [0x60]="0",[0x61]="1",[0x62]="2",[0x63]="3",[0x64]="4",
                     [0x65]="5",[0x66]="6",[0x67]="7",[0x68]="8",[0x69]="9",
                 }
-                -- register all slider typing keys so Input.Poll tracks them
                 for k in pairs(DIGIT_KEYS) do
                     if not table.find(W._tracked,k) then table.insert(W._tracked,k) end
                 end
@@ -1359,7 +1281,6 @@ function UI:Window(opts)
                 end
                 wg._poll = function()
                     if not wg._typing then return end
-                    -- click outside: commit
                     if Input.m1Down and not H.InRect(wg._typeRect.pos, wg._typeRect.size) then
                         local n = tonumber(wg._typeStr)
                         if n then wg._value=clampVal(n); cb(wg._value) end
@@ -1412,8 +1333,8 @@ function UI:Window(opts)
                 local dSbThumb=H.Sq(21,true,3); dSbThumb.Color=Theme.Accent   ; wg._drawings.sbh=dSbThumb ; CR_(dSbThumb, "Accent")
                 local od={}
                 for i=1,MAX_ROWS do
-                    local ob=H.Sq(20,true,2); ob.Color=Theme.Accent  -- subtle bg, only shown when selected
-                    local ol=H.Ln(22,2);      ol.Color=Theme.Accent   -- left accent bar
+                    local ob=H.Sq(20,true,2); ob.Color=Theme.Accent
+                    local ol=H.Ln(22,2);      ol.Color=Theme.Accent
                     local ot=H.Txt(21); ot.Color=Theme.Text
                     table.insert(od,{b=ob,l=ol,t=ot})
                     table.insert(wg._xd,ob); table.insert(wg._xd,ol); table.insert(wg._xd,ot)
@@ -1428,7 +1349,6 @@ function UI:Window(opts)
                     if bv then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cb2)
                     dT.Text=wg._title..": "..(wg._value or ""); dT.Position=H.Vec2(x+8,y+7); dT.Visible=tv
-                    -- double-diamond icon
                     local ax=x+w-11; local ay=y+14
                     dAU.PointA=H.Vec2(ax-4,ay-1); dAU.PointB=H.Vec2(ax+4,ay-1); dAU.PointC=H.Vec2(ax,ay-6)
                     dAD.PointA=H.Vec2(ax-4,ay+1); dAD.PointB=H.Vec2(ax+4,ay+1); dAD.PointC=H.Vec2(ax,ay+6)
@@ -1456,15 +1376,11 @@ function UI:Window(opts)
                         if wg._open and opt then
                             local oy = listY + (i-1)*26
                             local ov=H.InClip(oy,25,ct,cb2)
-                            -- only show bg for selected row
                             o.b.Position=H.Vec2(x,oy); o.b.Size=H.Vec2(w,24)
-                            -- subtle tinted bg only for selected
                             local accent = Theme.Accent
                             o.b.Color=Color3.new(accent.R*0.3, accent.G*0.3, accent.B*0.3)
-                            o.b.Visible=(opt==wg._value) and ov or false
-                            o.b.Corner=0
+                            o.b.Visible=(opt==wg._value) and ov or false; o.b.Corner=0
                             if o.b.Visible then o.b.Transparency=_openProg end
-                            -- left accent bar for selected
                             o.l.Color=Theme.Accent
                             o.l.From=H.Vec2(x+1,oy+3); o.l.To=H.Vec2(x+1,oy+21)
                             o.l.Visible=(opt==wg._value) and ov or false
@@ -1494,14 +1410,10 @@ function UI:Window(opts)
                 wg._click = function()
                     if not dB.Visible then return end
                     if dSbTrack.Visible and H.InRect(H.Vec2(wg._trackX, wg._trackY), H.Vec2(SB_W+2, wg._trackH)) then
-                        wg._sbDrag = true
-                        wg._sbDragY = H.MousePos().Y
-                        return
+                        wg._sbDrag = true; wg._sbDragY = H.MousePos().Y; return
                     end
                     if wg._open then
-                        -- hit test rows by position, not by background visibility
-                        local my = H.MousePos().Y
-                        local mx = H.MousePos().X
+                        local my = H.MousePos().Y; local mx = H.MousePos().X
                         local listY = wg._listY
                         if mx >= wg._listX and mx <= wg._listX + wg._listH + 100 and my >= listY and my <= listY + wg._listH then
                             local i = math.floor((my - listY) / 26) + 1
@@ -1519,9 +1431,7 @@ function UI:Window(opts)
                         wg._scroll = math.floor(pct * maxScroll + 0.5)
                     end
                 end
-                wg._release = function()
-                    wg._sbDrag = false
-                end
+                wg._release = function() wg._sbDrag = false end
                 table.insert(S._widgets, wg)
                 local r={}
                 function r:Get() return wg._value end
@@ -1566,7 +1476,6 @@ function UI:Window(opts)
                     if bv then dB.Transparency=_openProg end
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cb2)
                     dT.Text=wg._title..": "..st; dT.Position=H.Vec2(x+8,y+7); dT.Visible=tv
-                    -- double-diamond icon
                     local ax=x+w-11; local ay=y+14
                     dAU.PointA=H.Vec2(ax-4,ay-1); dAU.PointB=H.Vec2(ax+4,ay-1); dAU.PointC=H.Vec2(ax,ay-6)
                     dAD.PointA=H.Vec2(ax-4,ay+1); dAD.PointB=H.Vec2(ax+4,ay+1); dAD.PointC=H.Vec2(ax,ay+6)
@@ -1635,8 +1544,7 @@ function UI:Window(opts)
                         wg._sbDrag=true; wg._sbDragY=H.MousePos().Y; return
                     end
                     if wg._open then
-                        local my = H.MousePos().Y
-                        local mx = H.MousePos().X
+                        local my = H.MousePos().Y; local mx = H.MousePos().X
                         local listY = wg._listY
                         if mx >= wg._listX and mx <= wg._listX + wg._listH + 100 and my >= listY and my <= listY + wg._listH then
                             local i = math.floor((my - listY) / 26) + 1
@@ -1658,9 +1566,7 @@ function UI:Window(opts)
                         wg._scroll = math.floor(pct * maxScroll + 0.5)
                     end
                 end
-                wg._release = function()
-                    wg._sbDrag = false
-                end
+                wg._release = function() wg._sbDrag = false end
                 table.insert(S._widgets, wg)
                 local r={}
                 function r:Get() return wg._value end
@@ -1681,14 +1587,12 @@ function UI:Window(opts)
                 wg._upd = function(x,y,w,ct,cbot)
                     local tv=H.TxtClip(y+7,Theme.FontSize,ct,cbot)
                     dTt.Position=H.Vec2(x,y+7); dTt.Visible=tv
-                    
                     local ks=wg._changing and "..." or H.KeyName(wg._key)
                     local kw=math.max(44,#ks*8+12)
                     local kv=H.InClip(y+3,22,ct,cbot)
                     dKb.Position=H.Vec2(x+w-kw,y+3); dKb.Size=H.Vec2(kw,22); dKb.Visible=kv
                     if kv then dKb.Transparency=_openProg end
                     dKt.Text=ks; dKt.Position=H.Vec2(x+w-kw+5,y+8); dKt.Visible=kv
-                    
                 end
                 wg._click = function()
                     if dKb.Visible and H.InRect(dKb.Position,dKb.Size) then
