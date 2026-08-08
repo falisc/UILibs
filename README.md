@@ -9,7 +9,7 @@ This guide documents the current implementation in opencodelibslop.lua.
 The source is a loadstring-ready module and returns the ColaUI table directly. Create windows from your own script after loading it.
 
 ~~~
-local ColaUI = loadstring(game:HttpGet("YOUR_RAW_URL"))()
+local ColaUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/falisc/UILibs/refs/heads/main/ColaLib"))()
 
 local Library = ColaUI
 
